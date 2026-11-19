@@ -2698,6 +2698,7 @@ dependencies = [
  "periphos-hid",
  "periphos-logitech",
  "periphos-storage",
+ "periphos-wooting",
  "serde",
  "serde_json",
  "tauri",
@@ -2751,6 +2752,15 @@ dependencies = [
  "rusqlite",
  "serde_json",
  "uuid",
+]
+
+[[package]]
+name = "periphos-wooting"
+version = "0.1.0"
+dependencies = [
+ "hidapi",
+ "periphos-core",
+ "periphos-hid",
 ]
 
 [[package]]

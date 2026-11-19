@@ -1,0 +1,13 @@
+[package]
+name = "periphos-wooting"
+description = "Wooting keyboard driver for PeriphOS: onboard profile switching."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+periphos-core.workspace = true
+periphos-hid.workspace = true
+hidapi = "2.6.7"

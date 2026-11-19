@@ -12,11 +12,19 @@ use crate::database;
 pub struct HidDriver {
     // Created on first scan; refreshed on every scan after that.
     api: Mutex<Option<HidApi>>,
+    /// Vendors handled by a dedicated driver, which lists their devices itself.
+    excluded_vendors: Vec<u16>,
 }
 
 impl HidDriver {
     pub fn new() -> Self {
         Self::default()
+    }
+
+    /// Leaves devices of these vendors to their own driver, so they are not listed twice.
+    pub fn excluding_vendors(mut self, vendors: &[u16]) -> Self {
+        self.excluded_vendors.extend_from_slice(vendors);
+        self
     }
 
     fn interfaces(&self) -> CoreResult<Vec<HidInterface>> {
@@ -67,6 +75,11 @@ impl DeviceDriver for HidDriver {
     }
 
     fn enumerate(&self) -> CoreResult<Vec<DeviceInfo>> {
-        Ok(classify(&self.interfaces()?, database::bundled()))
+        let interfaces: Vec<_> = self
+            .interfaces()?
+            .into_iter()
+            .filter(|i| !self.excluded_vendors.contains(&i.vendor_id))
+            .collect();
+        Ok(classify(&interfaces, database::bundled()))
     }
 }
