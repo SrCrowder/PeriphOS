@@ -22,7 +22,8 @@ pub enum SupportLevel {
 }
 
 /// A feature a device may expose, with the parameters needed to render a
-/// correct configuration UI for it.
+/// correct configuration UI for it. Details the manufacturer does not publish
+/// are optional rather than guessed.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(
     tag = "type",
@@ -31,22 +32,23 @@ pub enum SupportLevel {
 )]
 pub enum CapabilityKind {
     /// Remapping of physical mouse buttons.
-    ButtonRemap { buttons: u8 },
+    ButtonRemap { programmable: Option<u8> },
     /// Remapping of keyboard keys.
     KeyRemap,
+    /// Analog (e.g. Hall effect) keys: adjustable actuation point, rapid trigger.
+    AnalogKeys,
     /// Playback of recorded or authored macros.
     Macros,
     /// Sensor resolution control.
     Dpi {
         min: u32,
         max: u32,
-        step: u32,
-        stages: u8,
+        step: Option<u32>,
     },
-    /// USB report rate control, in Hz.
-    PollingRate { rates: Vec<u32> },
-    /// Addressable lighting.
-    Lighting { zones: u16 },
+    /// USB report rate control.
+    PollingRate { max_hz: u32 },
+    /// Lighting control, per key or in zones.
+    Lighting { per_key: bool, zones: Option<u16> },
     /// Profiles stored in device memory.
     OnboardProfiles { slots: u8 },
     /// Battery level reporting.
@@ -100,17 +102,12 @@ mod tests {
     #[test]
     fn capability_serializes_with_tagged_kind() {
         let cap = Capability::new(
-            CapabilityKind::Dpi {
-                min: 100,
-                max: 26_000,
-                step: 50,
-                stages: 5,
-            },
+            CapabilityKind::PollingRate { max_hz: 8000 },
             SupportLevel::VendorProtocol,
         );
         let json = serde_json::to_value(&cap).unwrap();
-        assert_eq!(json["kind"]["type"], "dpi");
-        assert_eq!(json["kind"]["max"], 26_000);
+        assert_eq!(json["kind"]["type"], "pollingRate");
+        assert_eq!(json["kind"]["maxHz"], 8000);
         assert_eq!(json["support"], "vendorProtocol");
         assert!(json.get("note").is_none());
     }

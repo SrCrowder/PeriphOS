@@ -9,6 +9,8 @@ pub enum DeviceKind {
     Keyboard,
     Headset,
     Controller,
+    /// Wireless receiver (dongle) for one or more devices.
+    Receiver,
     Other,
 }
 
@@ -37,4 +39,11 @@ pub struct DeviceInfo {
     pub kind: DeviceKind,
     pub connection: ConnectionType,
     pub capabilities: Vec<Capability>,
+    /// True when the model is in PeriphOS's device database, so its name and
+    /// capabilities are known rather than read from generic descriptors.
+    pub known_model: bool,
+    /// Number of HID interfaces the device exposes.
+    pub interface_count: u16,
+    /// Human-readable remark about how the device is supported.
+    pub note: Option<String>,
 }

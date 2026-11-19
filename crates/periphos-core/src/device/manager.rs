@@ -103,6 +103,9 @@ mod tests {
                 kind: DeviceKind::Mouse,
                 connection: ConnectionType::Usb,
                 capabilities: vec![],
+                known_model: false,
+                interface_count: 1,
+                note: None,
             }])
         }
     }
