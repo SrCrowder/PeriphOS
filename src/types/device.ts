@@ -5,13 +5,15 @@ export type Platform = "windows" | "linux" | "macOs";
 /** How PeriphOS can provide a capability for a specific device. */
 export type SupportLevel = "native" | "software" | "vendorProtocol" | "unsupported";
 
+/** Details the manufacturer does not publish are `null`. */
 export type CapabilityKind =
-  | { type: "buttonRemap"; buttons: number }
+  | { type: "buttonRemap"; programmable: number | null }
   | { type: "keyRemap" }
+  | { type: "analogKeys" }
   | { type: "macros" }
-  | { type: "dpi"; min: number; max: number; step: number; stages: number }
-  | { type: "pollingRate"; rates: number[] }
-  | { type: "lighting"; zones: number }
+  | { type: "dpi"; min: number; max: number; step: number | null }
+  | { type: "pollingRate"; maxHz: number }
+  | { type: "lighting"; perKey: boolean; zones: number | null }
   | { type: "onboardProfiles"; slots: number }
   | { type: "battery" };
 
@@ -21,7 +23,7 @@ export interface Capability {
   note?: string;
 }
 
-export type DeviceKind = "mouse" | "keyboard" | "headset" | "controller" | "other";
+export type DeviceKind = "mouse" | "keyboard" | "headset" | "controller" | "receiver" | "other";
 export type ConnectionType = "usb" | "bluetooth" | "receiver" | "unknown";
 
 export interface DeviceInfo {
@@ -34,6 +36,10 @@ export interface DeviceInfo {
   kind: DeviceKind;
   connection: ConnectionType;
   capabilities: Capability[];
+  /** In PeriphOS's device database: name and capabilities are known. */
+  knownModel: boolean;
+  interfaceCount: number;
+  note: string | null;
 }
 
 export interface DriverInfo {
@@ -47,6 +53,8 @@ export interface DriverError {
   driverId: string;
   message: string;
 }
+
+export const DEVICES_CHANGED_EVENT = "devices-changed";
 
 export interface DeviceOverview {
   platform: Platform;

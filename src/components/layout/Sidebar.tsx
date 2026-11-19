@@ -32,7 +32,7 @@ export function Sidebar() {
 
       <nav aria-label="Main" className="flex flex-1 flex-col gap-1">
         {NAV_ITEMS.map(({ id, label, planned }) => {
-          const active = page === id;
+          const active = page === id || (page === "device" && id === "devices");
           return (
             <button
               key={id}

@@ -1,5 +1,4 @@
 import { CircleAlert, RefreshCw, Unplug } from "lucide-react";
-import { useEffect } from "react";
 
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Button, EmptyState, Panel, Spinner } from "@/components/ui";
@@ -11,10 +10,6 @@ import { SupportLevelLegend } from "./SupportLevelLegend";
 
 export function DevicesPage() {
   const { overview, scanning, error, scan } = useDevices();
-
-  useEffect(() => {
-    void scan();
-  }, [scan]);
 
   const noBackends = overview !== null && overview.drivers.length === 0;
 
@@ -46,12 +41,14 @@ export function DevicesPage() {
             <EmptyState icon={<Unplug />} title="No devices detected">
               {noBackends ? (
                 <>
-                  This build does not include any device backends yet, so PeriphOS cannot see your
-                  hardware. Detection of USB HID mice and keyboards on {PLATFORM_LABEL[overview.platform]}{" "}
-                  is the next milestone (Phase 2).
+                  No device backend is available on {PLATFORM_LABEL[overview.platform]}, so PeriphOS
+                  cannot see your hardware.
                 </>
               ) : (
-                <>Connect a supported mouse or keyboard, then scan again.</>
+                <>
+                  Connect a mouse, keyboard or controller. It appears here automatically, usually
+                  within two seconds.
+                </>
               )}
             </EmptyState>
           )}
@@ -88,10 +85,7 @@ export function DevicesPage() {
                 ))}
               </ul>
             ) : (
-              <p className="text-[13px] text-muted">
-                None enabled yet. Planned first: generic USB HID enumeration, then manufacturer
-                protocols contributed as separate drivers.
-              </p>
+              <p className="text-[13px] text-muted">None available on this platform.</p>
             )}
           </Panel>
         </div>

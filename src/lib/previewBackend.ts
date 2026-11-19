@@ -4,8 +4,12 @@
  * `periphos-storage` (validation, unique names, single default profile) so
  * the UI behaves the same, but nothing is persisted and no hardware is ever
  * reported. The app shows a banner whenever this backend is active.
+ *
+ * For UI work on device pages, `npm run dev` with `?fixtures` in the URL adds
+ * the example devices from `previewFixtures.ts` (development server only).
  */
 import type { IpcError } from "@/types/app";
+import type { DeviceInfo } from "@/types/device";
 import type { Profile, ProfileDraft } from "@/types/profile";
 import { PROFILE_DESCRIPTION_MAX, PROFILE_NAME_MAX } from "@/types/profile";
 import { DEFAULT_SETTINGS, type AppSettings } from "@/types/settings";
@@ -24,6 +28,11 @@ let profiles: Profile[] = [
   },
 ];
 let settings: AppSettings = { ...DEFAULT_SETTINGS };
+
+let fixtureDevices: DeviceInfo[] = [];
+if (import.meta.env.DEV && new URLSearchParams(location.search).has("fixtures")) {
+  fixtureDevices = (await import("./previewFixtures")).PREVIEW_FIXTURE_DEVICES;
+}
 
 function fail(code: IpcError["code"], message: string): never {
   throw { code, message } satisfies IpcError;
@@ -67,7 +76,7 @@ const handlers: { [C in CommandName]: (args: Commands[C]["args"]) => Commands[C]
   get_device_overview: () => ({
     platform: navigator.userAgent.includes("Windows") ? "windows" : "linux",
     drivers: [],
-    devices: [],
+    devices: fixtureDevices,
     driverErrors: [],
   }),
   list_profiles: () => sorted(),

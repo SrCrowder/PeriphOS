@@ -1,5 +1,4 @@
 import { ArrowUpRight } from "lucide-react";
-import { useEffect } from "react";
 
 import { Led } from "@/components/layout/Sidebar";
 import { Badge, Button, Panel } from "@/components/ui";
@@ -16,14 +15,11 @@ const DEVICE_SLOTS = 4;
 
 export function DashboardPage() {
   const navigate = useNavigation((s) => s.navigate);
+  const openDevice = useNavigation((s) => s.openDevice);
   const profiles = useProfiles((s) => s.profiles);
   const activeProfile = useProfiles(selectDefaultProfile);
-  const { overview, scan } = useDevices();
+  const overview = useDevices((s) => s.overview);
   const info = useAppInfo((s) => s.info);
-
-  useEffect(() => {
-    if (!overview) void scan();
-  }, [overview, scan]);
 
   const recent = [...profiles].sort((a, b) => b.updatedAt - a.updatedAt).slice(0, RECENT_LIMIT);
   const devices = overview?.devices ?? [];
@@ -65,12 +61,15 @@ export function DashboardPage() {
           {Array.from({ length: Math.max(DEVICE_SLOTS, devices.length) }, (_, i) => {
             const device = devices[i];
             return device ? (
-              <li
-                key={device.id}
-                className="flex h-16 flex-col justify-center rounded-2xl bg-raised px-3 shadow-module"
-              >
-                <span className="truncate text-[13px] font-semibold">{device.name}</span>
-                <span className="truncate text-xs text-muted">{device.manufacturer}</span>
+              <li key={device.id}>
+                <button
+                  type="button"
+                  onClick={() => openDevice(device.id)}
+                  className="flex h-16 w-full flex-col justify-center rounded-2xl bg-raised px-3 text-left shadow-module transition-colors hover:bg-hover"
+                >
+                  <span className="truncate text-[13px] font-semibold">{device.name}</span>
+                  <span className="truncate text-xs text-muted">{device.manufacturer}</span>
+                </button>
               </li>
             ) : (
               <li
@@ -84,8 +83,8 @@ export function DashboardPage() {
         </ul>
         <p className="mt-4 text-[13px] text-muted">
           {devices.length > 0
-            ? `${devices.length} connected.`
-            : "No devices detected. Hardware detection is the next milestone (Phase 2)."}
+            ? `${devices.length} connected. Select one to see what PeriphOS can do with it.`
+            : "No mice, keyboards or controllers detected."}
         </p>
         <dl className="mt-5 flex flex-wrap gap-x-8 gap-y-2 border-t border-line pt-4 text-[13px]">
           <div className="flex items-center gap-2">
