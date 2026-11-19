@@ -22,6 +22,7 @@ periphos-logitech.workspace = true
 periphos-apps.workspace = true
 serde.workspace = true
 serde_json.workspace = true
-tauri = { version = "2", features = [] }
+tauri = { version = "2", features = ["tray-icon"] }
 tauri-plugin-updater = "2"
 tauri-plugin-dialog = "2"
+tauri-plugin-single-instance = "2"

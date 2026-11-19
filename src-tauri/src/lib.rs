@@ -10,6 +10,7 @@ mod device_watcher;
 mod error;
 mod profile_runtime;
 mod state;
+mod tray;
 mod updates;
 
 use tauri::Manager;
@@ -22,6 +23,11 @@ const DATABASE_FILE: &str = "periphos.db";
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
+        // Must be first: a second launch focuses the running instance instead of
+        // starting another one that would compete for the same devices.
+        .plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
+            tray::show_main_window(app)
+        }))
         .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_plugin_dialog::init())
         .manage(PendingUpdate::default())
@@ -32,8 +38,10 @@ pub fn run() {
             app.manage(state);
             device_watcher::spawn(app.handle().clone());
             app_watcher::spawn(app.handle().clone());
+            tray::create(app.handle());
             Ok(())
         })
+        .on_window_event(tray::on_window_event)
         .invoke_handler(tauri::generate_handler![
             commands::app::get_app_info,
             commands::devices::get_device_overview,
