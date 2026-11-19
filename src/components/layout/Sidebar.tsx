@@ -21,6 +21,8 @@ export function Sidebar() {
   const page = useNavigation((s) => s.page);
   const navigate = useNavigation((s) => s.navigate);
   const activeProfile = useProfiles(selectActiveProfile);
+  const mode = useProfiles((s) => s.mode);
+  const matchedApp = useProfiles((s) => s.matchedApp);
   const version = useAppInfo((s) => s.info?.version);
   const availableVersion = useUpdates((s) => (s.phase === "available" ? s.result?.version : null));
 
@@ -81,6 +83,9 @@ export function Sidebar() {
           <Led on className="text-accent" /> Active profile
         </span>
         <span className="mt-1 block truncate text-sm font-bold">{activeProfile?.name ?? "Loading…"}</span>
+        <span className="mt-0.5 block truncate text-[11.5px] text-subtle">
+          {mode === "manual" ? "Chosen manually" : matchedApp ? `For ${matchedApp}` : "Automatic"}
+        </span>
       </button>
       <p className="px-3 pt-3 pb-1 text-[11.5px] text-subtle">
         {version ? `Version ${version}` : " "}

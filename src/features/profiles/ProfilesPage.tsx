@@ -1,8 +1,8 @@
-import { AppWindow, CircleAlert, Plus } from "lucide-react";
+import { CircleAlert, Plus } from "lucide-react";
 import { useState } from "react";
 
 import { PageHeader } from "@/components/layout/PageHeader";
-import { Button, ConfirmDialog, EmptyState, Panel, PlannedTag, Spinner } from "@/components/ui";
+import { Button, ConfirmDialog, EmptyState, Panel, Spinner } from "@/components/ui";
 import { errorMessage } from "@/lib/errors";
 import { reportActivation, useProfiles } from "@/stores/profiles";
 import { toast } from "@/stores/toasts";
@@ -10,6 +10,7 @@ import type { Profile } from "@/types/profile";
 
 import { ProfileFormDialog } from "./ProfileFormDialog";
 import { ProfileRow } from "./ProfileRow";
+import { SwitchingPanel } from "./SwitchingPanel";
 
 export function ProfilesPage() {
   const { profiles, activeId, status, error, load, remove, setDefault, activate } = useProfiles();
@@ -56,6 +57,8 @@ export function ProfilesPage() {
       />
 
       <div className="flex flex-col gap-4">
+        <SwitchingPanel />
+
         <Panel flush>
           {status === "loading" || status === "idle" ? (
             <div className="grid place-items-center py-16 text-muted">
@@ -90,23 +93,7 @@ export function ProfilesPage() {
           )}
         </Panel>
 
-        <Panel
-          title={
-            <span className="flex items-center gap-2">
-              Linked games and apps <PlannedTag milestone="Phase 3" />
-            </span>
-          }
-        >
-          <div className="flex gap-4">
-            <AppWindow className="mt-0.5 size-5 shrink-0 text-subtle" />
-            <p className="max-w-2xl text-[13px] text-muted">
-              You will be able to link a profile to games and applications so it activates when they
-              come to the foreground. Besides picking an executable, PeriphOS will let you choose
-              from running processes and installed Microsoft Store / Game Pass packages, whose
-              executables Windows does not let you browse to.
-            </p>
-          </div>
-        </Panel>
+
       </div>
 
       <ProfileFormDialog open={formOpen} onClose={() => setFormOpen(false)} profile={editing} />

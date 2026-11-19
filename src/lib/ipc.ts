@@ -8,7 +8,14 @@
  */
 import type { AppInfo } from "@/types/app";
 import type { DeviceOverview, DeviceSettings, SettingChange, SettingResult } from "@/types/device";
-import type { ActivationReport, DeviceProfileSettings, Profile, ProfileDraft } from "@/types/profile";
+import type { AppIdentity, AppRule, AppRuleKind } from "@/types/apps";
+import type {
+  ActivationReport,
+  ActiveProfileInfo,
+  DeviceProfileSettings,
+  Profile,
+  ProfileDraft,
+} from "@/types/profile";
 import type { AppSettings } from "@/types/settings";
 import type { UpdateCheck, UpdateStatus } from "@/types/updates";
 
@@ -24,7 +31,15 @@ export interface Commands {
   update_profile: { args: { id: string; draft: ProfileDraft }; result: Profile };
   delete_profile: { args: { id: string }; result: null };
   set_default_profile: { args: { id: string }; result: Profile };
-  get_active_profile: { args: undefined; result: Profile };
+  get_active_profile: { args: undefined; result: ActiveProfileInfo };
+  resume_automatic_switching: { args: undefined; result: ActiveProfileInfo };
+  list_app_rules: { args: { profileId: string }; result: AppRule[] };
+  add_app_rule: {
+    args: { profileId: string; kind: AppRuleKind; value: string; displayName: string };
+    result: AppRule;
+  };
+  delete_app_rule: { args: { id: string }; result: null };
+  list_running_apps: { args: undefined; result: AppIdentity[] };
   activate_profile: { args: { id: string }; result: ActivationReport };
   list_profile_device_settings: { args: { profileId: string }; result: DeviceProfileSettings[] };
   save_device_settings_to_profile: {
@@ -72,6 +87,12 @@ export const api = {
   setDefaultProfile: (id: string) => call("set_default_profile", { id }),
   activeProfile: () => call("get_active_profile"),
   activateProfile: (id: string) => call("activate_profile", { id }),
+  resumeAutomaticSwitching: () => call("resume_automatic_switching"),
+  appRules: (profileId: string) => call("list_app_rules", { profileId }),
+  addAppRule: (profileId: string, kind: AppRuleKind, value: string, displayName: string) =>
+    call("add_app_rule", { profileId, kind, value, displayName }),
+  deleteAppRule: (id: string) => call("delete_app_rule", { id }),
+  runningApps: () => call("list_running_apps"),
   profileDeviceSettings: (profileId: string) => call("list_profile_device_settings", { profileId }),
   saveDeviceSettingsToProfile: (profileId: string, deviceId: string) =>
     call("save_device_settings_to_profile", { profileId, deviceId }),

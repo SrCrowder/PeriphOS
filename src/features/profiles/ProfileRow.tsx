@@ -7,6 +7,7 @@ import { cn } from "@/lib/cn";
 import { formatDateTime, formatRelative } from "@/lib/format";
 import type { Profile } from "@/types/profile";
 
+import { ProfileApps } from "./ProfileApps";
 import { ProfileDeviceSettings } from "./ProfileDeviceSettings";
 
 interface ProfileRowProps {
@@ -96,7 +97,7 @@ export function ProfileRow({
           <Button
             size="sm"
             variant="ghost"
-            aria-label="Device settings"
+            aria-label="Games, apps and device settings"
             aria-expanded={open}
             onClick={() => setOpen((o) => !o)}
           >
@@ -105,9 +106,15 @@ export function ProfileRow({
         </div>
       </div>
       {open && (
-        <div className="px-6 pb-4 pl-20">
-          <p className="mb-2 text-xs font-semibold text-muted">Device settings in this profile</p>
-          <ProfileDeviceSettings profileId={profile.id} />
+        <div className="grid gap-5 px-6 pb-5 pl-20 xl:grid-cols-2">
+          <section>
+            <p className="mb-2 text-xs font-semibold text-muted">Games and apps</p>
+            <ProfileApps profile={profile} />
+          </section>
+          <section>
+            <p className="mb-2 text-xs font-semibold text-muted">Device settings</p>
+            <ProfileDeviceSettings profileId={profile.id} />
+          </section>
         </div>
       )}
     </li>

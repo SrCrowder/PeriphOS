@@ -7,6 +7,7 @@ import {
   type ActivationReport,
   type Profile,
   type ProfileDraft,
+  type SwitchMode,
 } from "@/types/profile";
 
 import { toast } from "./toasts";
@@ -17,6 +18,10 @@ interface ProfilesState {
   profiles: Profile[];
   /** The profile whose settings are in effect. */
   activeId: string | null;
+  mode: SwitchMode;
+  /** Linked app that selected the active profile, in automatic mode. */
+  matchedApp: string | null;
+  automaticSupported: boolean;
   status: Status;
   error: string | null;
   load: () => Promise<void>;
@@ -26,11 +31,12 @@ interface ProfilesState {
   remove: (id: string) => Promise<void>;
   setDefault: (id: string) => Promise<void>;
   activate: (id: string) => Promise<ActivationReport>;
+  resumeAutomatic: () => Promise<void>;
   /** Follow profile changes made by the backend. Returns an unsubscribe function. */
   watch: () => Promise<() => void>;
 }
 
-/** Toast describing what happened when a profile's settings were applied. */
+/** Toasts describing what happened when a profile's settings were applied. */
 export function reportActivation(report: ActivationReport) {
   const failed = report.results.filter((r) => !r.applied);
   const applied = report.results.filter((r) => r.applied);
@@ -38,22 +44,25 @@ export function reportActivation(report: ActivationReport) {
   for (const result of failed) {
     toast.error(`Could not apply "${name}" to ${result.deviceName}: ${result.message ?? "unknown error"}`);
   }
+  if (failed.length > 0) return;
   if (report.reason === "activated") {
-    if (failed.length === 0) {
-      toast.success(
-        applied.length > 0
-          ? `"${name}" is active. Settings applied to ${applied.map((r) => r.deviceName).join(", ")}.`
-          : `"${name}" is active.`,
-      );
-    }
-  } else if (applied.length > 0) {
+    toast.success(
+      applied.length > 0
+        ? `"${name}" is active. Settings applied to ${applied.map((r) => r.deviceName).join(", ")}.`
+        : `"${name}" is active.`,
+    );
+  } else if (report.reason === "deviceConnected" && applied.length > 0) {
     toast.info(`Applied "${name}" settings to ${applied.map((r) => r.deviceName).join(", ")}.`);
   }
+  // Automatic switches are shown in the sidebar; a toast on every app change would be noise.
 }
 
 export const useProfiles = create<ProfilesState>((set, get) => ({
   profiles: [],
   activeId: null,
+  mode: "automatic",
+  matchedApp: null,
+  automaticSupported: false,
   status: "idle",
   error: null,
 
@@ -61,7 +70,14 @@ export const useProfiles = create<ProfilesState>((set, get) => ({
     set({ status: get().status === "ready" ? "ready" : "loading", error: null });
     try {
       const [profiles, active] = await Promise.all([api.listProfiles(), api.activeProfile()]);
-      set({ profiles, activeId: active.id, status: "ready" });
+      set({
+        profiles,
+        activeId: active.profile.id,
+        mode: active.mode,
+        matchedApp: active.matchedApp,
+        automaticSupported: active.automaticSupported,
+        status: "ready",
+      });
     } catch (error) {
       set({ status: "error", error: errorMessage(error) });
     }
@@ -91,17 +107,23 @@ export const useProfiles = create<ProfilesState>((set, get) => ({
 
   activate: async (id) => {
     const report = await api.activateProfile(id);
-    set({ activeId: report.profile.id });
+    set({ activeId: report.profile.id, mode: report.mode, matchedApp: report.matchedApp });
     return report;
+  },
+
+  resumeAutomatic: async () => {
+    const active = await api.resumeAutomaticSwitching();
+    set({ activeId: active.profile.id, mode: active.mode, matchedApp: active.matchedApp });
   },
 
   watch: async () => {
     if (!isTauri) return () => {};
     const { listen } = await import("@tauri-apps/api/event");
     return listen<ActivationReport>(PROFILE_APPLIED_EVENT, (event) => {
-      set({ activeId: event.payload.profile.id });
+      const report = event.payload;
+      set({ activeId: report.profile.id, mode: report.mode, matchedApp: report.matchedApp });
       // Activations started from this window already report their own result.
-      if (event.payload.reason === "deviceConnected") reportActivation(event.payload);
+      if (report.reason !== "activated") reportActivation(report);
     });
   },
 }));

@@ -35,10 +35,24 @@ export interface DeviceApplyResult {
   message: string | null;
 }
 
+/** `automatic`: follows the game or app in front. `manual`: chosen by the user. */
+export type SwitchMode = "automatic" | "manual";
+
 export interface ActivationReport {
   profile: Profile;
-  reason: "activated" | "deviceConnected";
+  mode: SwitchMode;
+  /** Linked app that selected the profile, in automatic mode. */
+  matchedApp: string | null;
+  reason: "activated" | "appSwitched" | "deviceConnected";
   results: DeviceApplyResult[];
+}
+
+export interface ActiveProfileInfo {
+  profile: Profile;
+  mode: SwitchMode;
+  matchedApp: string | null;
+  /** Whether this platform can follow the foreground app. */
+  automaticSupported: boolean;
 }
 
 export const PROFILE_APPLIED_EVENT = "profile-applied";

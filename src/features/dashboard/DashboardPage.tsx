@@ -21,6 +21,8 @@ export function DashboardPage() {
   const openDevice = useNavigation((s) => s.openDevice);
   const profiles = useProfiles((s) => s.profiles);
   const activeProfile = useProfiles(selectActiveProfile);
+  const mode = useProfiles((s) => s.mode);
+  const matchedApp = useProfiles((s) => s.matchedApp);
   const overview = useDevices((s) => s.overview);
   const info = useAppInfo((s) => s.info);
 
@@ -38,7 +40,11 @@ export function DashboardPage() {
             {activeProfile?.name ?? " "}
           </p>
           <p className="mt-4 max-w-md text-sm font-medium opacity-80">
-            {activeProfile?.description ?? "Used when no application-specific profile applies."}
+            {mode === "manual"
+              ? "Chosen manually. Automatic switching is paused."
+              : matchedApp
+                ? `Active while ${matchedApp} is in front.`
+                : (activeProfile?.description ?? "Used when no linked game or app is in front.")}
           </p>
         </div>
         <button

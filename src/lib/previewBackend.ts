@@ -10,7 +10,8 @@
  */
 import type { IpcError } from "@/types/app";
 import type { DeviceInfo, DeviceSettings } from "@/types/device";
-import type { DeviceProfileSettings, Profile, ProfileDraft } from "@/types/profile";
+import type { AppRule } from "@/types/apps";
+import type { DeviceProfileSettings, Profile, ProfileDraft, SwitchMode } from "@/types/profile";
 import { PROFILE_DESCRIPTION_MAX, PROFILE_NAME_MAX } from "@/types/profile";
 import { DEFAULT_SETTINGS, type AppSettings } from "@/types/settings";
 
@@ -29,6 +30,8 @@ let profiles: Profile[] = [
 ];
 let settings: AppSettings = { ...DEFAULT_SETTINGS };
 let activeProfileId: string | null = null;
+let switchMode: SwitchMode = "automatic";
+let appRules: AppRule[] = [];
 let deviceSettings: (DeviceProfileSettings & { profileId: string })[] = [];
 
 function activeProfile(): Profile {
@@ -118,13 +121,47 @@ const handlers: { [C in CommandName]: (args: Commands[C]["args"]) => Commands[C]
       );
     profiles = profiles.filter((p) => p.id !== id);
     deviceSettings = deviceSettings.filter((s) => s.profileId !== id);
+    appRules = appRules.filter((r) => r.profileId !== id);
     if (activeProfileId === id) activeProfileId = null;
     return null;
   },
-  get_active_profile: () => activeProfile(),
+  get_active_profile: () => ({
+    profile: activeProfile(),
+    mode: switchMode,
+    matchedApp: null,
+    automaticSupported: false,
+  }),
+  resume_automatic_switching: () => {
+    switchMode = "automatic";
+    activeProfileId = null;
+    return { profile: activeProfile(), mode: switchMode, matchedApp: null, automaticSupported: false };
+  },
+  list_app_rules: ({ profileId }) => appRules.filter((r) => r.profileId === profileId),
+  add_app_rule: ({ profileId, kind, value, displayName }) => {
+    const profile = find(profileId);
+    if (profile.isDefault)
+      fail("validation", "The default profile is used when no linked app is running, so apps cannot be linked to it.");
+    const existing = appRules.find((r) => r.kind === kind && r.value.toLowerCase() === value.toLowerCase());
+    if (existing) fail("conflict", `${displayName} is already linked to "${find(existing.profileId).name}".`);
+    const rule: AppRule = { id: crypto.randomUUID(), profileId, kind, value, displayName, createdAt: Date.now() };
+    appRules.push(rule);
+    return rule;
+  },
+  delete_app_rule: ({ id }) => {
+    appRules = appRules.filter((r) => r.id !== id);
+    return null;
+  },
+  list_running_apps: () =>
+    fixtureDevices.length > 0
+      ? [
+          { exeName: "ForzaHorizon5.exe", exePath: "C:\\XboxGames\\Forza Horizon 5\\Content\\ForzaHorizon5.exe", packageFamily: "Example.ForzaHorizon5_8wekyb3d8bbwe", title: "Forza Horizon 5" },
+          { exeName: "cs2.exe", exePath: "D:\\Steam\\steamapps\\common\\Counter-Strike Global Offensive\\game\\bin\\win64\\cs2.exe", packageFamily: null, title: "Counter-Strike 2" },
+        ]
+      : [],
   activate_profile: ({ id }) => {
     const profile = find(id);
     activeProfileId = id;
+    switchMode = "manual";
     const connected = new Set(fixtureDevices.map((d) => d.id));
     const results = deviceSettings
       .filter((s) => s.profileId === id && connected.has(s.deviceId))
@@ -134,7 +171,7 @@ const handlers: { [C in CommandName]: (args: Commands[C]["args"]) => Commands[C]
         if (live?.reportRate && s.reportRateHz) live.reportRate.currentHz = s.reportRateHz;
         return { deviceId: s.deviceId, deviceName: s.deviceName, applied: true, message: null };
       });
-    return { profile, reason: "activated", results };
+    return { profile, mode: "manual", matchedApp: null, reason: "activated", results };
   },
   list_profile_device_settings: ({ profileId }) =>
     deviceSettings.filter((s) => s.profileId === profileId).map(({ profileId: _, ...s }) => s),
