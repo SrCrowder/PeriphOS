@@ -11,6 +11,7 @@ fn from_row(row: &Row<'_>) -> rusqlite::Result<DeviceProfileSettings> {
         dpi: row.get(2)?,
         report_rate_hz: row.get(3)?,
         updated_at: row.get(4)?,
+        onboard_profile: row.get(5)?,
     })
 }
 
@@ -23,7 +24,7 @@ impl Storage {
         let mut stmt = self
             .conn
             .prepare(
-                "SELECT device_id, device_name, dpi, report_rate_hz, updated_at \
+                "SELECT device_id, device_name, dpi, report_rate_hz, updated_at, onboard_profile \
                  FROM profile_device_settings WHERE profile_id = ?1 ORDER BY device_name COLLATE NOCASE",
             )
             .map_err(to_core)?;
@@ -47,18 +48,20 @@ impl Storage {
         self.conn
             .execute(
                 "INSERT INTO profile_device_settings \
-                 (profile_id, device_id, device_name, dpi, report_rate_hz, updated_at) \
-                 VALUES (?1, ?2, ?3, ?4, ?5, ?6) \
+                 (profile_id, device_id, device_name, dpi, report_rate_hz, updated_at, onboard_profile) \
+                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7) \
                  ON CONFLICT(profile_id, device_id) DO UPDATE SET \
                  device_name = excluded.device_name, dpi = excluded.dpi, \
-                 report_rate_hz = excluded.report_rate_hz, updated_at = excluded.updated_at",
+                 report_rate_hz = excluded.report_rate_hz, updated_at = excluded.updated_at, \
+                 onboard_profile = excluded.onboard_profile",
                 params![
                     profile_id,
                     settings.device_id,
                     settings.device_name,
                     settings.dpi,
                     settings.report_rate_hz,
-                    now
+                    now,
+                    settings.onboard_profile
                 ],
             )
             .map_err(to_core)?;
@@ -95,8 +98,33 @@ mod tests {
             device_name: "G502 X PLUS".into(),
             dpi: Some(dpi),
             report_rate_hz: Some(1000),
+            onboard_profile: None,
             updated_at: 0,
         }
+    }
+
+    #[test]
+    fn onboard_profile_round_trips() {
+        let s = Storage::open_in_memory().unwrap();
+        let p = s
+            .create_profile(ProfileDraft {
+                name: "FPS".into(),
+                description: None,
+            })
+            .unwrap();
+        let keyboard = DeviceProfileSettings {
+            device_id: "wooting:1400:ABC".into(),
+            device_name: "80HE".into(),
+            dpi: None,
+            report_rate_hz: None,
+            onboard_profile: Some(2),
+            updated_at: 0,
+        };
+        s.save_profile_device_settings(&p.id, &keyboard).unwrap();
+        assert_eq!(
+            s.profile_device_settings(&p.id).unwrap()[0].onboard_profile,
+            Some(2)
+        );
     }
 
     #[test]

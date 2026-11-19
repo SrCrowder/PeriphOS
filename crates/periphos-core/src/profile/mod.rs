@@ -75,6 +75,9 @@ pub struct DeviceProfileSettings {
     pub device_name: String,
     pub dpi: Option<u32>,
     pub report_rate_hz: Option<u32>,
+    /// Zero-based onboard profile to activate on the device.
+    #[serde(default)]
+    pub onboard_profile: Option<u8>,
     /// Unix timestamp in milliseconds.
     pub updated_at: i64,
 }
@@ -83,6 +86,10 @@ impl DeviceProfileSettings {
     /// The changes to send to the device, in a stable order.
     pub fn changes(&self) -> Vec<SettingChange> {
         let mut changes = Vec::new();
+        // The onboard profile first: switching it can reset other values.
+        if let Some(index) = self.onboard_profile {
+            changes.push(SettingChange::OnboardProfile(index));
+        }
         if let Some(dpi) = self.dpi {
             changes.push(SettingChange::Dpi(dpi));
         }
@@ -93,7 +100,7 @@ impl DeviceProfileSettings {
     }
 
     pub fn is_empty(&self) -> bool {
-        self.dpi.is_none() && self.report_rate_hz.is_none()
+        self.dpi.is_none() && self.report_rate_hz.is_none() && self.onboard_profile.is_none()
     }
 }
 
@@ -131,11 +138,16 @@ mod tests {
             device_name: "Mouse".into(),
             dpi: Some(800),
             report_rate_hz: Some(1000),
+            onboard_profile: Some(2),
             updated_at: 0,
         };
         assert_eq!(
             s.changes(),
-            vec![SettingChange::Dpi(800), SettingChange::ReportRateHz(1000)]
+            vec![
+                SettingChange::OnboardProfile(2),
+                SettingChange::Dpi(800),
+                SettingChange::ReportRateHz(1000)
+            ]
         );
         assert!(!s.is_empty());
     }

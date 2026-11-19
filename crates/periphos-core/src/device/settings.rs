@@ -19,6 +19,16 @@ pub struct ReportRateSetting {
     pub values_hz: Vec<u32>,
 }
 
+/// Which of the profiles stored in the device's memory is in use.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct OnboardProfileSetting {
+    /// Zero-based index of the active onboard profile.
+    pub current: u8,
+    /// Number of onboard profiles.
+    pub count: u8,
+}
+
 /// Settings read from the device right now. `None` means the device or the
 /// driver does not support that setting.
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
@@ -29,6 +39,13 @@ pub struct DeviceSettings {
     /// True when the device runs from a profile stored in its memory, which can
     /// ignore or override changes. `None` when the device has no such mode.
     pub onboard_profile_active: Option<bool>,
+    /// Onboard profile selection, for devices whose profiles PeriphOS can switch.
+    #[serde(default)]
+    pub onboard_profile: Option<OnboardProfileSetting>,
+    /// Other software running now that also controls this device and may undo
+    /// PeriphOS's changes (for example the manufacturer's app).
+    #[serde(default)]
+    pub conflicting_software: Vec<String>,
 }
 
 /// A change requested by the user.
@@ -37,6 +54,8 @@ pub struct DeviceSettings {
 pub enum SettingChange {
     Dpi(u32),
     ReportRateHz(u32),
+    /// Zero-based index of the onboard profile to activate.
+    OnboardProfile(u8),
 }
 
 impl SettingChange {
@@ -48,6 +67,10 @@ impl SettingChange {
                 .report_rate
                 .as_ref()
                 .is_some_and(|r| r.current_hz == *v),
+            SettingChange::OnboardProfile(i) => settings
+                .onboard_profile
+                .as_ref()
+                .is_some_and(|p| p.current == *i),
         }
     }
 }

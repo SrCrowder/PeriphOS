@@ -48,6 +48,10 @@ const MIGRATIONS: &[&str] = &[
         UNIQUE (kind, value)
     );
     "#,
+    // v4: onboard profile selection per device in a profile.
+    r#"
+    ALTER TABLE profile_device_settings ADD COLUMN onboard_profile INTEGER;
+    "#,
 ];
 
 pub(crate) fn run(conn: &mut Connection) -> CoreResult<()> {
