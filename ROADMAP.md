@@ -14,7 +14,6 @@ what exists today. Legend: ✅ implemented, 🟡 partially implemented, ⏳ plan
 - ✅ Devices page with honest empty state and support-level legend
 - ✅ Profiles: create, rename, describe, delete, choose the default profile, saved locally
 - ✅ Settings page (appearance settings persisted; other options shown as planned)
-- 🟡 "Active profile" is always the default profile until automatic switching exists
 
 ## Updates ✅
 
@@ -46,12 +45,16 @@ what exists today. Legend: ✅ implemented, 🟡 partially implemented, ⏳ plan
 - ✅ Read and change DPI and report rate; every change is validated against the values the
   device accepts and read back to confirm it took effect
 - ✅ Devices that stop answering for a moment (asleep to save battery) stay listed for 60 seconds
-- ⏳ Save DPI and report rate in PeriphOS profiles and apply them on profile switch
 - ⏳ Switch onboard memory mode on and off
 - ⏳ Devices connected by cable and over Bluetooth
 - ⏳ Linux: avoid listing a receiver-connected device twice (the kernel also exposes it)
 
-## Phase 3: Profiles and game detection ⏳
+## Phase 3: Profiles and game detection 🟡
+
+- ✅ Save a device's current DPI and report rate in a profile
+- ✅ Activate a profile manually; its device settings are applied to connected devices
+- ✅ When a device connects (or comes back after being switched off and losing its settings),
+  the active profile's settings are applied to it
 
 - ⏳ Link profiles to applications: by executable, by picking a running process, and by
   installed Microsoft Store / Game Pass package (no need to browse protected `WindowsApps` folders)

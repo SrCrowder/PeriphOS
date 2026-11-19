@@ -147,6 +147,14 @@ through a receiver as their own HID devices, so they may be listed twice.
 
 Next drivers: Wooting (open SDKs) and more of HID++ (DPI, report rate).
 
+## Profiles at runtime
+
+`src-tauri/src/profile_runtime.rs` keeps the active profile (the user's choice, or the
+default profile) and applies its saved device settings (`profile_device_settings` table)
+through each device's driver. Settings are applied when a profile is activated and when a
+device appears in the device watcher's scan, which covers devices that were switched off and
+lost their settings. Every application is reported to the UI with a `profile-applied` event.
+
 ## Persistence
 
 - One database file, `periphos.db`, in the OS app-data directory
