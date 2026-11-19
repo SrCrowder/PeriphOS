@@ -2460,6 +2460,7 @@ version = "0.1.0"
 dependencies = [
  "periphos-core",
  "periphos-hid",
+ "periphos-logitech",
  "periphos-storage",
  "serde",
  "serde_json",
@@ -2485,6 +2486,14 @@ dependencies = [
  "periphos-core",
  "serde",
  "serde_json",
+]
+
+[[package]]
+name = "periphos-logitech"
+version = "0.1.0"
+dependencies = [
+ "hidapi",
+ "periphos-core",
 ]
 
 [[package]]

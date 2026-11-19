@@ -1,0 +1,12 @@
+[package]
+name = "periphos-logitech"
+description = "Logitech HID++ driver for PeriphOS."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+periphos-core.workspace = true
+hidapi = "2.6.7"

@@ -154,6 +154,8 @@ pub fn classify(interfaces: &[HidInterface], db: &Database) -> Vec<DeviceInfo> {
                 known_model: known.is_some(),
                 interface_count: members.len().min(u16::MAX as usize) as u16,
                 note,
+                battery: None,
+                connected_via: None,
             })
         })
         .collect()

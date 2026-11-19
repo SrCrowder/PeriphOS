@@ -160,7 +160,7 @@
       "sources": [
         "https://support.logi.com/hc/en-in/articles/7639086777111-Specification-G502-X-LIGHTSPEED-Gaming-Mouse"
       ],
-      "note": "The mouse or keyboard paired with this receiver can only be identified through Logitech's HID++ protocol, which PeriphOS does not implement yet.",
+      "note": "Devices connected through this receiver are listed separately while they are switched on.",
       "capabilities": []
     },
     {
@@ -327,7 +327,7 @@
         "http://www.linux-usb.org/usb.ids",
         "https://pwr-solaar.github.io/Solaar/capabilities"
       ],
-      "note": "Logitech's receiver for up to six Unifying keyboards and mice. The devices paired with it can only be identified through Logitech's HID++ protocol, which PeriphOS does not implement yet.",
+      "note": "Logitech's receiver for up to six Unifying keyboards and mice. Devices connected through it are listed separately while they are switched on.",
       "capabilities": []
     },
     {
