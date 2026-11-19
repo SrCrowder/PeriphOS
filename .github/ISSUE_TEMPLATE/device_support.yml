@@ -1,0 +1,45 @@
+name: Device support request
+description: Ask for support for a specific mouse, keyboard or other peripheral.
+labels: ["device-support"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks! The more details you give, the easier it is to add support.
+        Do not attach files extracted from proprietary manufacturer software.
+  - type: input
+    id: model
+    attributes:
+      label: Manufacturer and model
+      placeholder: e.g. Logitech G Pro X Superlight 2
+    validations:
+      required: true
+  - type: input
+    id: ids
+    attributes:
+      label: USB vendor and product ID
+      description: "Windows: Device Manager > device > Details > Hardware Ids. Linux: `lsusb`."
+      placeholder: e.g. 046D:C547
+  - type: dropdown
+    id: connection
+    attributes:
+      label: Connection
+      multiple: true
+      options: ["USB cable", "Wireless receiver", "Bluetooth"]
+  - type: checkboxes
+    id: features
+    attributes:
+      label: Features you want to configure
+      options:
+        - label: Button / key remapping
+        - label: Macros
+        - label: DPI
+        - label: Polling rate
+        - label: Lighting
+        - label: Onboard profiles
+        - label: Battery level
+  - type: textarea
+    id: notes
+    attributes:
+      label: Anything else?
+      description: Links to open-source projects that already support this device are very useful.

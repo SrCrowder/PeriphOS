@@ -1,0 +1,43 @@
+name: Bug report
+description: Something in PeriphOS does not work as expected.
+labels: ["bug"]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened?
+      description: What did you do, what did you expect, and what happened instead?
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Open ...
+        2. Click ...
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: PeriphOS version
+      description: Shown in Settings > About.
+    validations:
+      required: true
+  - type: dropdown
+    id: os
+    attributes:
+      label: Operating system
+      options: ["Windows 11", "Windows 10", "Linux", "Other"]
+    validations:
+      required: true
+  - type: textarea
+    id: devices
+    attributes:
+      label: Devices involved
+      description: Manufacturer, model and connection (USB, receiver, Bluetooth), if relevant.
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs or screenshots
