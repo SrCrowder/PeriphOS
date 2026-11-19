@@ -32,6 +32,8 @@ what exists today. Legend: ✅ implemented, 🟡 partially implemented, ⏳ plan
 - ⏳ Manual profile override
 - ⏳ Profiles shared by several devices
 - ⏳ Launch at startup and minimize to tray
+- ⏳ Releases and updates: signed installers built by CI on GitHub Releases, in-app update check
+  and install (Tauri updater). Linux: AppImage updates in-app; distro packages update through the package manager
 
 ## Phase 4: Input remapping and macros ⏳
 
