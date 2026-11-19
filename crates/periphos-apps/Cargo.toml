@@ -1,0 +1,19 @@
+[package]
+name = "periphos-apps"
+description = "Foreground and running application detection for PeriphOS."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+periphos-core.workspace = true
+
+[target.'cfg(windows)'.dependencies]
+windows = { version = "0.62.2", features = [
+  "Win32_Foundation",
+  "Win32_Storage_Packaging_Appx",
+  "Win32_System_Threading",
+  "Win32_UI_WindowsAndMessaging",
+] }
