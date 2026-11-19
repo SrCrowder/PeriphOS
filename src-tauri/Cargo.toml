@@ -17,6 +17,7 @@ tauri-build = { version = "2", features = [] }
 [dependencies]
 periphos-core.workspace = true
 periphos-storage.workspace = true
+periphos-hid.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 tauri = { version = "2", features = [] }

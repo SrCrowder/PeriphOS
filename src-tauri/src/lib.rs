@@ -5,6 +5,7 @@
 //! IPC commands and translate errors.
 
 mod commands;
+mod device_watcher;
 mod error;
 mod state;
 mod updates;
@@ -26,6 +27,7 @@ pub fn run() {
             std::fs::create_dir_all(&data_dir)?;
             let state = AppState::new(data_dir.join(DATABASE_FILE))?;
             app.manage(state);
+            device_watcher::spawn(app.handle().clone());
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![

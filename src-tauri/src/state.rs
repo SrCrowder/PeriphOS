@@ -15,9 +15,9 @@ pub struct AppState {
 impl AppState {
     pub fn new(database_path: PathBuf) -> Result<Self, CoreError> {
         let storage = Storage::open(&database_path)?;
-        // No device drivers ship in Phase 1. Drivers are registered here as
-        // they are implemented (see docs/ARCHITECTURE.md).
-        let devices = DeviceManager::new();
+        // Every device backend is registered here (see docs/ARCHITECTURE.md).
+        let mut devices = DeviceManager::new();
+        devices.register(Box::new(periphos_hid::HidDriver::new()));
         Ok(Self {
             storage: Mutex::new(storage),
             devices,
