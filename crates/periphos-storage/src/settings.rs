@@ -54,6 +54,7 @@ mod tests {
             reduce_motion: true,
             update_channel: Some(UpdateChannel::Development),
             auto_check_updates: false,
+            minimize_to_tray: false,
         };
         s.save_settings(&custom).unwrap();
         assert_eq!(s.load_settings().unwrap(), custom);

@@ -45,6 +45,9 @@ pub struct AppSettings {
     pub update_channel: Option<UpdateChannel>,
     /// Look for a new version when the app starts.
     pub auto_check_updates: bool,
+    /// Keep running in the system tray when the window is closed, so profiles
+    /// keep switching and settings keep being applied.
+    pub minimize_to_tray: bool,
 }
 
 impl Default for AppSettings {
@@ -55,6 +58,7 @@ impl Default for AppSettings {
             reduce_motion: false,
             update_channel: None,
             auto_check_updates: true,
+            minimize_to_tray: true,
         }
     }
 }
@@ -71,5 +75,6 @@ mod tests {
         assert!(!s.reduce_motion);
         assert_eq!(s.update_channel, None);
         assert!(s.auto_check_updates);
+        assert!(s.minimize_to_tray);
     }
 }
