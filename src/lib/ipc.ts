@@ -8,7 +8,7 @@
  */
 import type { AppInfo } from "@/types/app";
 import type { DeviceOverview, DeviceSettings, SettingChange, SettingResult } from "@/types/device";
-import type { AppIdentity, AppRule, AppRuleKind } from "@/types/apps";
+import type { AppIdentity, AppRule, AppRuleKind, InstalledPackage } from "@/types/apps";
 import type {
   ActivationReport,
   ActiveProfileInfo,
@@ -40,6 +40,7 @@ export interface Commands {
   };
   delete_app_rule: { args: { id: string }; result: null };
   list_running_apps: { args: undefined; result: AppIdentity[] };
+  list_installed_packages: { args: undefined; result: InstalledPackage[] };
   activate_profile: { args: { id: string }; result: ActivationReport };
   list_profile_device_settings: { args: { profileId: string }; result: DeviceProfileSettings[] };
   save_device_settings_to_profile: {
@@ -93,6 +94,7 @@ export const api = {
     call("add_app_rule", { profileId, kind, value, displayName }),
   deleteAppRule: (id: string) => call("delete_app_rule", { id }),
   runningApps: () => call("list_running_apps"),
+  installedPackages: () => call("list_installed_packages"),
   profileDeviceSettings: (profileId: string) => call("list_profile_device_settings", { profileId }),
   saveDeviceSettingsToProfile: (profileId: string, deviceId: string) =>
     call("save_device_settings_to_profile", { profileId, deviceId }),

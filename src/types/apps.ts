@@ -8,6 +8,15 @@ export interface AppIdentity {
   title: string;
 }
 
+/** Microsoft Store / Game Pass package installed for the current user. */
+export interface InstalledPackage {
+  packageFamily: string;
+  displayName: string;
+  installPath: string | null;
+  /** PC game (its package carries a MicrosoftGame.config). */
+  isGame: boolean;
+}
+
 export type AppRuleKind = "executable" | "package";
 
 export interface AppRule {

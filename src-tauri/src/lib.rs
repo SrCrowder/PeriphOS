@@ -59,6 +59,7 @@ pub fn run() {
             commands::profiles::add_app_rule,
             commands::profiles::delete_app_rule,
             commands::profiles::list_running_apps,
+            commands::profiles::list_installed_packages,
             commands::profiles::list_profile_device_settings,
             commands::profiles::save_device_settings_to_profile,
             commands::profiles::delete_profile_device_settings,

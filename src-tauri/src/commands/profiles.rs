@@ -1,4 +1,4 @@
-use periphos_core::apps::{AppIdentity, AppRule, AppRuleKind};
+use periphos_core::apps::{AppIdentity, AppRule, AppRuleKind, InstalledPackage};
 use periphos_core::profile::{DeviceProfileSettings, Profile, ProfileDraft};
 use periphos_core::CoreError;
 use tauri::{AppHandle, State};
@@ -126,6 +126,14 @@ pub fn add_app_rule(
 #[tauri::command]
 pub fn delete_app_rule(state: State<'_, AppState>, id: String) -> IpcResult<()> {
     Ok(state.storage()?.delete_app_rule(&id)?)
+}
+
+/// Microsoft Store / Game Pass packages installed for the current user.
+#[tauri::command]
+pub async fn list_installed_packages() -> IpcResult<Vec<InstalledPackage>> {
+    tauri::async_runtime::spawn_blocking(periphos_apps::installed_packages)
+        .await
+        .map_err(|e| CoreError::Device(format!("could not list installed apps: {e}")).into())
 }
 
 /// Applications with an open window, for linking them to a profile.

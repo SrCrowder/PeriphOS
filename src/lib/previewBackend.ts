@@ -158,6 +158,14 @@ const handlers: { [C in CommandName]: (args: Commands[C]["args"]) => Commands[C]
           { exeName: "cs2.exe", exePath: "D:\\Steam\\steamapps\\common\\Counter-Strike Global Offensive\\game\\bin\\win64\\cs2.exe", packageFamily: null, title: "Counter-Strike 2" },
         ]
       : [],
+  list_installed_packages: () =>
+    fixtureDevices.length > 0
+      ? [
+          { packageFamily: "Example.ForzaHorizon5_8wekyb3d8bbwe", displayName: "Forza Horizon 5", installPath: null, isGame: true },
+          { packageFamily: "Example.SeaOfThieves_8wekyb3d8bbwe", displayName: "Sea of Thieves", installPath: null, isGame: true },
+          { packageFamily: "Example.Notepad_8wekyb3d8bbwe", displayName: "Notepad", installPath: null, isGame: false },
+        ]
+      : [],
   activate_profile: ({ id }) => {
     const profile = find(id);
     activeProfileId = id;
