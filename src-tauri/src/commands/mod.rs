@@ -5,3 +5,4 @@ pub mod app;
 pub mod devices;
 pub mod profiles;
 pub mod settings;
+pub mod updates;

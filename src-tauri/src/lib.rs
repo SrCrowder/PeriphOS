@@ -7,16 +7,20 @@
 mod commands;
 mod error;
 mod state;
+mod updates;
 
 use tauri::Manager;
 
 use crate::state::AppState;
+use crate::updates::PendingUpdate;
 
 const DATABASE_FILE: &str = "periphos.db";
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
+        .plugin(tauri_plugin_updater::Builder::new().build())
+        .manage(PendingUpdate::default())
         .setup(|app| {
             let data_dir = app.path().app_data_dir()?;
             std::fs::create_dir_all(&data_dir)?;
@@ -34,6 +38,9 @@ pub fn run() {
             commands::profiles::set_default_profile,
             commands::settings::get_settings,
             commands::settings::update_settings,
+            commands::updates::get_update_status,
+            commands::updates::check_for_update,
+            commands::updates::install_update,
         ])
         .run(tauri::generate_context!())
         .expect("error while running PeriphOS");
