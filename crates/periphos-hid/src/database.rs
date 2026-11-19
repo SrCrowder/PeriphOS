@@ -53,6 +53,15 @@ impl Database {
         })
     }
 
+    /// Model whose name matches what a device reports about itself (for devices
+    /// identified through a vendor protocol rather than by USB ID).
+    pub fn lookup_by_name(&self, vendor_id: u16, name: &str) -> Option<&KnownDevice> {
+        let name = name.trim();
+        self.devices.iter().find(|d| {
+            d.vendor_id == vendor_id && !d.is_virtual && d.name.eq_ignore_ascii_case(name)
+        })
+    }
+
     pub fn vendor_name(&self, vendor_id: u16) -> Option<&str> {
         self.vendors
             .get(&format!("{vendor_id:04x}"))
@@ -106,6 +115,19 @@ mod tests {
         );
         assert_eq!(db.lookup(0x1b1c, 0x1bf0).unwrap().name, "M75 Gaming Mouse");
         assert_eq!(db.vendor_name(0x1b1c), Some("Corsair"));
+    }
+
+    #[test]
+    fn models_can_be_found_by_reported_name() {
+        let db = bundled();
+        assert_eq!(
+            db.lookup_by_name(0x046d, "G502 X PLUS").unwrap().product_id,
+            0xc095
+        );
+        assert!(db
+            .lookup_by_name(0x046d, "G HUB virtual keyboard")
+            .is_none());
+        assert!(db.lookup_by_name(0x31e3, "G502 X PLUS").is_none());
     }
 
     #[test]

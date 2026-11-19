@@ -30,8 +30,11 @@ pub enum Presence {
     Online { major: u8, minor: u8 },
     /// A HID++ 1.0 device is there; it does not support the 2.0 features used here.
     Legacy,
-    /// Nothing reachable in this slot (empty, switched off or asleep).
-    Absent,
+    /// No device is paired in this slot.
+    Empty,
+    /// A device may be paired but did not answer: switched off, asleep to save
+    /// battery, out of range, or the reply was lost among other traffic.
+    Unreachable,
 }
 
 pub struct Session<T: Transport> {
@@ -64,7 +67,15 @@ impl<T: Transport> Session<T> {
         }
     }
 
+    /// Pings a slot, retrying once if no answer arrives in time.
     pub fn ping(&mut self, device: u8) -> Result<Presence, Error> {
+        match self.ping_once(device)? {
+            Presence::Unreachable => self.ping_once(device),
+            presence => Ok(presence),
+        }
+    }
+
+    fn ping_once(&mut self, device: u8) -> Result<Presence, Error> {
         const MARK: u8 = 0x5A;
         match self.call(&Request::new(device, 0x00, 0x1, &[0, 0, MARK])) {
             Ok(data) if data.len() >= 3 && data[2] == MARK => Ok(Presence::Online {
@@ -73,12 +84,11 @@ impl<T: Transport> Session<T> {
             }),
             Ok(_) => Err(Error::Io("unexpected ping reply".into())),
             Err(Error::Hidpp10(hidpp10_error::INVALID_SUB_ID)) => Ok(Presence::Legacy),
+            Err(Error::Hidpp10(hidpp10_error::UNKNOWN_DEVICE)) => Ok(Presence::Empty),
             Err(Error::Hidpp10(
-                hidpp10_error::UNKNOWN_DEVICE
-                | hidpp10_error::RESOURCE_ERROR
-                | hidpp10_error::CONNECTION_REQUEST_FAILED,
+                hidpp10_error::RESOURCE_ERROR | hidpp10_error::CONNECTION_REQUEST_FAILED,
             ))
-            | Err(Error::Timeout) => Ok(Presence::Absent),
+            | Err(Error::Timeout) => Ok(Presence::Unreachable),
             Err(other) => Err(other),
         }
     }
@@ -206,13 +216,34 @@ pub(crate) mod tests {
     #[test]
     fn ping_on_empty_slot_is_absent() {
         let t = FakeTransport::new(|req| vec![vec![0x10, req[1], 0x8F, req[2], req[3], 0x08, 0]]);
-        assert_eq!(session(t).ping(3).unwrap(), Presence::Absent);
+        assert_eq!(session(t).ping(3).unwrap(), Presence::Empty);
     }
 
     #[test]
-    fn silent_slot_times_out_as_absent() {
+    fn sleeping_device_is_unreachable_not_empty() {
+        let t = FakeTransport::new(|req| vec![vec![0x10, req[1], 0x8F, req[2], req[3], 0x09, 0]]);
+        assert_eq!(session(t).ping(1).unwrap(), Presence::Unreachable);
+    }
+
+    #[test]
+    fn ping_is_retried_once_when_the_reply_is_lost() {
+        let mut first = true;
+        let t = FakeTransport::new(move |req| {
+            if std::mem::take(&mut first) {
+                return vec![]; // reply lost
+            }
+            vec![long(req[1], 0, req[3], &[4, 2, req[6]])]
+        });
+        assert!(matches!(
+            session(t).ping(1).unwrap(),
+            Presence::Online { .. }
+        ));
+    }
+
+    #[test]
+    fn silent_slot_times_out_as_unreachable() {
         let t = FakeTransport::new(|_| vec![]);
-        assert_eq!(session(t).ping(5).unwrap(), Presence::Absent);
+        assert_eq!(session(t).ping(5).unwrap(), Presence::Unreachable);
     }
 
     #[test]

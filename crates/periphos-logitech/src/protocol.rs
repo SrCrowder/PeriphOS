@@ -29,6 +29,10 @@ pub mod feature {
     pub const BATTERY_VOLTAGE: u16 = 0x1001;
     pub const UNIFIED_BATTERY: u16 = 0x1004;
     pub const ADC_MEASUREMENT: u16 = 0x1F20;
+    pub const ADJUSTABLE_DPI: u16 = 0x2201;
+    pub const REPORT_RATE: u16 = 0x8060;
+    pub const EXTENDED_REPORT_RATE: u16 = 0x8061;
+    pub const ONBOARD_PROFILES: u16 = 0x8100;
 }
 
 /// HID++ 1.0 error codes that mean "no device in this slot right now".

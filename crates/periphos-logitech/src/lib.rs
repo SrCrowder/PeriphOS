@@ -1,13 +1,15 @@
 //! # periphos-logitech
 //!
-//! Logitech HID++ driver (`logitech-hidpp`). For now it lists the devices
-//! connected through Logitech receivers (Unifying, LIGHTSPEED, Nano, Bolt)
-//! and reads their battery. It only sends read requests.
+//! Logitech HID++ driver (`logitech-hidpp`). It lists the devices connected
+//! through Logitech receivers (Unifying, LIGHTSPEED, Nano, Bolt), reads their
+//! battery, and changes sensitivity (DPI) and report rate. Every change is
+//! validated against the values the device reports and read back afterwards.
 //!
 //! - [`protocol`]: report layout and decoders (pure, tested).
 //! - [`session`]: request/reply matching over a [`session::Transport`], tested
 //!   against simulated devices.
 //! - [`probe`]: what is paired with a receiver.
+//! - [`settings`]: DPI, report rate and onboard-profile mode.
 //! - `transport` / `driver`: real I/O through `hidapi`.
 //!
 //! The protocol was implemented from public descriptions of HID++ (Logitech's
@@ -18,6 +20,7 @@ pub mod probe;
 pub mod protocol;
 pub mod receivers;
 pub mod session;
+pub mod settings;
 
 mod driver;
 mod transport;

@@ -2494,6 +2494,7 @@ version = "0.1.0"
 dependencies = [
  "hidapi",
  "periphos-core",
+ "periphos-hid",
 ]
 
 [[package]]

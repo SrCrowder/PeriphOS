@@ -17,21 +17,29 @@ pub struct PairedDevice {
     pub wireless_pid: Option<u16>,
     /// HID++ 1.0 device: present, but only basic information is available.
     pub legacy: bool,
+    /// The device accepts DPI changes (ADJUSTABLE_DPI).
+    pub adjustable_dpi: bool,
+    /// The device accepts report rate changes (REPORT_RATE or its extended version).
+    pub adjustable_report_rate: bool,
 }
 
-/// Every online device on the receiver. A failure on one slot never hides the others.
-pub fn probe_receiver<T: Transport>(
-    session: &mut Session<T>,
-    read_pairing: bool,
-) -> Vec<PairedDevice> {
+#[derive(Debug, Default)]
+pub struct ProbeResult {
+    /// Devices that answered.
+    pub devices: Vec<PairedDevice>,
+    /// Slots whose device did not answer this time but may still be paired.
+    pub unreachable: Vec<u8>,
+}
+
+/// Every device on the receiver. A failure on one slot never hides the others.
+pub fn probe_receiver<T: Transport>(session: &mut Session<T>, read_pairing: bool) -> ProbeResult {
     let mut found = Vec::new();
+    let mut unreachable = Vec::new();
     for slot in 1..=MAX_SLOTS {
-        let presence = match session.ping(slot) {
-            Ok(p) => p,
-            Err(_) => continue,
-        };
+        let presence = session.ping(slot).unwrap_or(Presence::Unreachable);
         match presence {
-            Presence::Absent => {}
+            Presence::Empty => {}
+            Presence::Unreachable => unreachable.push(slot),
             Presence::Legacy => found.push(PairedDevice {
                 slot,
                 name: None,
@@ -41,6 +49,8 @@ pub fn probe_receiver<T: Transport>(
                     .then(|| session.wireless_product_id(slot).ok().flatten())
                     .flatten(),
                 legacy: true,
+                adjustable_dpi: false,
+                adjustable_report_rate: false,
             }),
             Presence::Online { .. } => {
                 let (name, kind) = match session.name_and_type(slot) {
@@ -56,11 +66,26 @@ pub fn probe_receiver<T: Transport>(
                         .then(|| session.wireless_product_id(slot).ok().flatten())
                         .flatten(),
                     legacy: false,
+                    adjustable_dpi: supports(session, slot, &[feature::ADJUSTABLE_DPI]),
+                    adjustable_report_rate: supports(
+                        session,
+                        slot,
+                        &[feature::REPORT_RATE, feature::EXTENDED_REPORT_RATE],
+                    ),
                 });
             }
         }
     }
-    found
+    ProbeResult {
+        devices: found,
+        unreachable,
+    }
+}
+
+fn supports<T: Transport>(session: &mut Session<T>, device: u8, features: &[u16]) -> bool {
+    features
+        .iter()
+        .any(|&f| matches!(session.feature_index(device, f), Ok(Some(_))))
 }
 
 /// Tries each battery feature a Logitech device may implement.
@@ -128,7 +153,9 @@ mod tests {
     #[test]
     fn finds_the_mouse_behind_the_receiver() {
         let mut session = Session::new(lightspeed_with_mouse(), Duration::from_millis(50));
-        let devices = probe_receiver(&mut session, true);
+        let result = probe_receiver(&mut session, true);
+        assert!(result.unreachable.is_empty());
+        let devices = result.devices;
         assert_eq!(devices.len(), 1);
         let mouse = &devices[0];
         assert_eq!(mouse.slot, 1);
