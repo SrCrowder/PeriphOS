@@ -10,7 +10,7 @@
 //!   active window but Wayland deliberately does not, so this needs
 //!   desktop-specific work (see docs/ARCHITECTURE.md).
 
-pub use periphos_core::apps::AppIdentity;
+pub use periphos_core::apps::{AppIdentity, InstalledPackage};
 
 #[cfg(windows)]
 mod windows;
@@ -28,6 +28,21 @@ pub const SUPPORTED: bool = cfg!(windows);
 /// The application owning the foreground window, unless it belongs to this process.
 pub fn foreground_app() -> Option<AppIdentity> {
     platform::foreground_app()
+}
+
+/// Microsoft Store / Game Pass packages installed for the current user, games
+/// first, then by name. Frameworks, resource packages and system apps are left out.
+pub fn installed_packages() -> Vec<InstalledPackage> {
+    let mut packages = platform::installed_packages();
+    packages.sort_by(|a, b| {
+        b.is_game.cmp(&a.is_game).then_with(|| {
+            a.display_name
+                .to_lowercase()
+                .cmp(&b.display_name.to_lowercase())
+        })
+    });
+    packages.dedup_by(|a, b| a.package_family.eq_ignore_ascii_case(&b.package_family));
+    packages
 }
 
 /// Applications with a visible top-level window, one entry per application,

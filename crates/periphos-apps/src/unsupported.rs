@@ -1,4 +1,8 @@
-use periphos_core::apps::AppIdentity;
+use periphos_core::apps::{AppIdentity, InstalledPackage};
+
+pub fn installed_packages() -> Vec<InstalledPackage> {
+    Vec::new()
+}
 
 pub fn foreground_app() -> Option<AppIdentity> {
     None

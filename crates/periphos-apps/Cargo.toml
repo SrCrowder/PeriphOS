@@ -12,6 +12,9 @@ periphos-core.workspace = true
 
 [target.'cfg(windows)'.dependencies]
 windows = { version = "0.62.2", features = [
+  "ApplicationModel",
+  "Foundation_Collections",
+  "Management_Deployment",
   "Win32_Foundation",
   "Win32_Storage_Packaging_Appx",
   "Win32_System_Threading",

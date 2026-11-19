@@ -1,7 +1,11 @@
 //! Win32 implementation.
 
-use periphos_core::apps::{file_name, AppIdentity};
-use windows::core::{BOOL, PWSTR};
+use std::path::Path;
+
+use periphos_core::apps::{file_name, AppIdentity, InstalledPackage};
+use windows::core::{BOOL, HSTRING, PWSTR};
+use windows::ApplicationModel::{Package, PackageSignatureKind};
+use windows::Management::Deployment::PackageManager;
 use windows::Win32::Foundation::{CloseHandle, ERROR_SUCCESS, HANDLE, HWND, LPARAM};
 use windows::Win32::Storage::Packaging::Appx::GetPackageFamilyName;
 use windows::Win32::System::Threading::{
@@ -137,4 +141,59 @@ pub fn running_apps() -> Vec<AppIdentity> {
         .filter(|&hwnd| is_app_window(hwnd) && !window_title(hwnd).trim().is_empty())
         .filter_map(identify)
         .collect()
+}
+
+/// One installed package, if it is something a user would launch: not a
+/// framework, resource or bundle package, and not part of Windows itself.
+fn describe(package: &Package) -> Option<InstalledPackage> {
+    if package.IsFramework().ok()?
+        || package.IsResourcePackage().ok()?
+        || package.IsBundle().ok()?
+    {
+        return None;
+    }
+    if package.SignatureKind().ok()? == PackageSignatureKind::System {
+        return None;
+    }
+    let package_family = package.Id().ok()?.FamilyName().ok()?.to_string_lossy();
+    let display_name = package
+        .DisplayName()
+        .ok()
+        .map(|n| n.to_string_lossy())
+        .filter(|n| !n.trim().is_empty());
+    let install_path = package.InstalledPath().ok().map(|p| p.to_string_lossy());
+    // PC games from the Microsoft Store / Game Pass ship a MicrosoftGame.config. Folders
+    // under WindowsApps may not be readable, in which case the check is simply false.
+    let is_game = install_path
+        .as_deref()
+        .is_some_and(|p| Path::new(p).join("MicrosoftGame.config").exists());
+    Some(InstalledPackage {
+        display_name: display_name.unwrap_or_else(|| package_family.clone()),
+        package_family,
+        install_path,
+        is_game,
+    })
+}
+
+pub fn installed_packages() -> Vec<InstalledPackage> {
+    let Ok(manager) = PackageManager::new() else {
+        return Vec::new();
+    };
+    // An empty security ID means the current user, which needs no elevation.
+    let Ok(packages) = manager.FindPackagesByUserSecurityId(&HSTRING::new()) else {
+        return Vec::new();
+    };
+    let Ok(iterator) = packages.First() else {
+        return Vec::new();
+    };
+    let mut found = Vec::new();
+    while iterator.HasCurrent().unwrap_or(false) {
+        if let Some(package) = iterator.Current().ok().as_ref().and_then(describe) {
+            found.push(package);
+        }
+        if !iterator.MoveNext().unwrap_or(false) {
+            break;
+        }
+    }
+    found
 }

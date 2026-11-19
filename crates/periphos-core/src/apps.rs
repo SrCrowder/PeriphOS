@@ -29,6 +29,17 @@ impl AppIdentity {
     }
 }
 
+/// A Microsoft Store / Game Pass package installed for the current user.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct InstalledPackage {
+    pub package_family: String,
+    pub display_name: String,
+    pub install_path: Option<String>,
+    /// True for PC games (their package carries a `MicrosoftGame.config`).
+    pub is_game: bool,
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub enum AppRuleKind {
