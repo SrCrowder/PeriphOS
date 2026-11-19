@@ -1,0 +1,21 @@
+[package]
+name = "periphos"
+description = "PeriphOS desktop application."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+
+[lib]
+name = "periphos_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+periphos-core.workspace = true
+periphos-storage.workspace = true
+serde.workspace = true
+tauri = { version = "2", features = [] }
