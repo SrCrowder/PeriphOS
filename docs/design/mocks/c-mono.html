@@ -1,0 +1,30 @@
+<!doctype html><html><head><meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0}body{width:1280px;height:800px;font-family:"IBM Plex Sans";background:#161618;color:#ededee;display:flex;font-size:14px;overflow:hidden}
+aside{width:220px;padding:22px 14px;border-right:1px solid #262628;display:flex;flex-direction:column}
+.brand{font-weight:600;padding:0 10px 22px;display:flex;gap:8px;align-items:center}.sq{width:14px;height:14px;background:#ededee;border-radius:3px}
+.n{padding:7px 10px;border-radius:6px;color:#8a8a8f;display:flex;justify-content:space-between}.n.on{background:#232325;color:#fff}.n kbd{font:12px "IBM Plex Mono";color:#5c5c61}
+.grp{font-size:12px;color:#5c5c61;padding:18px 10px 6px}
+main{flex:1;padding:22px 56px}
+.cmd{display:flex;align-items:center;gap:10px;border:1px solid #2b2b2e;border-radius:8px;padding:9px 12px;color:#6c6c71;width:420px}.cmd kbd{margin-left:auto;font:12px "IBM Plex Mono";border:1px solid #333;border-radius:4px;padding:1px 6px}
+h1{font-size:15px;font-weight:500;color:#8a8a8f;margin-top:56px}
+.big{font-size:64px;font-weight:600;letter-spacing:-.035em;line-height:1.05;margin-top:6px}
+.sub{color:#8a8a8f;margin-top:10px}
+.state{display:inline-flex;gap:8px;align-items:center;margin-top:18px;font:13px "IBM Plex Mono";color:#b3b3b8}.lime{width:8px;height:8px;border-radius:50%;background:#c6f432}
+table{width:100%;border-collapse:collapse;margin-top:48px}th{font-weight:500;font-size:12px;color:#5c5c61;text-align:left;padding:8px 0;border-bottom:1px solid #262628}td{padding:13px 0;border-bottom:1px solid #202022}
+.m{font-family:"IBM Plex Mono";color:#8a8a8f;font-size:13px}.tag{font:12px "IBM Plex Mono";color:#c6f432}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:56px}
+</style></head><body>
+<aside><div class="brand"><span class="sq"></span>PeriphOS</div>
+<div class="n on">Dashboard<kbd>1</kbd></div><div class="n">Devices<kbd>2</kbd></div><div class="n">Profiles<kbd>3</kbd></div><div class="grp">Coming later</div><div class="n">Macros<kbd>4</kbd></div><div class="n">RGB Studio<kbd>5</kbd></div><div style="flex:1"></div><div class="n">Settings<kbd>,</kbd></div></aside>
+<main><div class="cmd">Search profiles, devices, settings…<kbd>Ctrl K</kbd></div>
+<h1>Active profile</h1><div class="big">Default</div><div class="sub">Used when no application-specific profile applies.</div>
+<div class="state"><span class="lime"></span>applied globally · per-game switching in phase 3</div>
+<div class="two"><table><tr><th>Profiles</th><th></th><th style="text-align:right">Edited</th></tr>
+<tr><td>Default</td><td class="tag">default</td><td class="m" style="text-align:right">just now</td></tr>
+<tr><td>Valorant</td><td></td><td class="m" style="text-align:right">2 min ago</td></tr></table>
+<table><tr><th>Devices</th><th style="text-align:right">VID:PID</th></tr>
+<tr><td colspan="2" style="color:#8a8a8f">No devices detected. USB HID detection is the next milestone.</td></tr>
+<tr><td class="m">backends</td><td class="m" style="text-align:right">0 enabled</td></tr></table></div>
+</main></body></html>
