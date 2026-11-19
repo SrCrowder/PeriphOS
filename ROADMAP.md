@@ -62,7 +62,8 @@ what exists today. Legend: ✅ implemented, 🟡 partially implemented, ⏳ plan
 - ✅ Automatic switching on Windows: the profile linked to the app in front activates, the default
   profile otherwise
 - ✅ Manual override: activating a profile pauses automatic switching until it is resumed
-- ⏳ Pick installed Microsoft Store / Game Pass games that are not running
+- ✅ Pick installed Microsoft Store / Game Pass games without starting them (games first, all
+  apps on request)
 - ⏳ Automatic switching on Linux (X11 first; Wayland needs desktop-specific support)
 - ⏳ Profiles shared by several devices
 - ✅ Keep running in the system tray when the window is closed (single instance)
