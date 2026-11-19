@@ -16,6 +16,13 @@ what exists today. Legend: ✅ implemented, 🟡 partially implemented, ⏳ plan
 - ✅ Settings page (appearance settings persisted; other options shown as planned)
 - 🟡 "Active profile" is always the default profile until automatic switching exists
 
+## Updates ✅
+
+- ✅ In-app update check and install, with Stable and Development channels ([docs/RELEASING.md](docs/RELEASING.md))
+- ✅ Signed Windows installers built by CI on GitHub Releases
+- ⏳ Windows code signing (removes the SmartScreen warning)
+- ⏳ Linux AppImage updates
+
 ## Phase 2: Device management ⏳
 
 - ⏳ Windows-first USB HID enumeration driver (`hid-generic`), designed to also run on Linux (hidraw)
@@ -32,8 +39,6 @@ what exists today. Legend: ✅ implemented, 🟡 partially implemented, ⏳ plan
 - ⏳ Manual profile override
 - ⏳ Profiles shared by several devices
 - ⏳ Launch at startup and minimize to tray
-- ⏳ Releases and updates: signed installers built by CI on GitHub Releases, in-app update check
-  and install (Tauri updater). Linux: AppImage updates in-app; distro packages update through the package manager
 
 ## Phase 4: Input remapping and macros ⏳
 

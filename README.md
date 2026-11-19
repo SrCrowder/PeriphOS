@@ -37,6 +37,17 @@ lightweight application that:
 | Linux             | High priority, the architecture is built to support it    |
 | macOS             | Not planned for now; contributions welcome                |
 
+## Download
+
+- **Development builds** (every change, for testing): the
+  [`nightly` prerelease](https://github.com/SrCrowder/PeriphOS/releases/tag/nightly).
+- **Stable releases**: [Releases](https://github.com/SrCrowder/PeriphOS/releases/latest)
+  (none published yet).
+
+Install once; after that PeriphOS updates itself from Settings > Updates. The installers are not
+code-signed yet, so Windows SmartScreen asks for confirmation: choose **More info**, then
+**Run anyway**.
+
 ## Getting started
 
 ### Prerequisites
@@ -72,7 +83,7 @@ crates/periphos-core     Hardware-agnostic domain: devices, capabilities, driver
 crates/periphos-storage  SQLite persistence with versioned migrations
 src-tauri/               Desktop app: Tauri setup and IPC commands (thin layer)
 src/                     React + TypeScript frontend
-docs/                    Architecture and design notes
+docs/                    Architecture, design notes and release process
 ```
 
 Read [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the full design, technical decisions
