@@ -24,6 +24,18 @@ const MIGRATIONS: &[&str] = &[
         value TEXT NOT NULL
     );
     "#,
+    // v2: device settings stored per profile.
+    r#"
+    CREATE TABLE profile_device_settings (
+        profile_id     TEXT NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+        device_id      TEXT NOT NULL,
+        device_name    TEXT NOT NULL,
+        dpi            INTEGER,
+        report_rate_hz INTEGER,
+        updated_at     INTEGER NOT NULL,
+        PRIMARY KEY (profile_id, device_id)
+    );
+    "#,
 ];
 
 pub(crate) fn run(conn: &mut Connection) -> CoreResult<()> {

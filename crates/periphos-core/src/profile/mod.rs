@@ -7,6 +7,7 @@
 
 use serde::{Deserialize, Serialize};
 
+use crate::device::SettingChange;
 use crate::{CoreError, CoreResult};
 
 pub const NAME_MAX_LEN: usize = 64;
@@ -65,6 +66,37 @@ impl ProfileDraft {
     }
 }
 
+/// Device settings stored in a profile and applied when the profile is active.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct DeviceProfileSettings {
+    pub device_id: String,
+    /// Name shown while the device is not connected.
+    pub device_name: String,
+    pub dpi: Option<u32>,
+    pub report_rate_hz: Option<u32>,
+    /// Unix timestamp in milliseconds.
+    pub updated_at: i64,
+}
+
+impl DeviceProfileSettings {
+    /// The changes to send to the device, in a stable order.
+    pub fn changes(&self) -> Vec<SettingChange> {
+        let mut changes = Vec::new();
+        if let Some(dpi) = self.dpi {
+            changes.push(SettingChange::Dpi(dpi));
+        }
+        if let Some(hz) = self.report_rate_hz {
+            changes.push(SettingChange::ReportRateHz(hz));
+        }
+        changes
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.dpi.is_none() && self.report_rate_hz.is_none()
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -90,6 +122,22 @@ mod tests {
             .normalized()
             .is_err());
         assert!(draft(&"a".repeat(NAME_MAX_LEN), None).normalized().is_ok());
+    }
+
+    #[test]
+    fn device_settings_become_changes() {
+        let s = DeviceProfileSettings {
+            device_id: "x".into(),
+            device_name: "Mouse".into(),
+            dpi: Some(800),
+            report_rate_hz: Some(1000),
+            updated_at: 0,
+        };
+        assert_eq!(
+            s.changes(),
+            vec![SettingChange::Dpi(800), SettingChange::ReportRateHz(1000)]
+        );
+        assert!(!s.is_empty());
     }
 
     #[test]
