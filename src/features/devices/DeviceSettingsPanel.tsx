@@ -1,5 +1,5 @@
 import { RefreshCw, TriangleAlert } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import { Button, Panel, SegmentedControl, Spinner } from "@/components/ui";
 import { api } from "@/lib/ipc";
@@ -41,8 +41,9 @@ export function DeviceSettingsPanel({ device }: { device: DeviceInfo }) {
   const [dpiIndex, setDpiIndex] = useState(0);
   const [busy, setBusy] = useState(false);
 
-  const load = useCallback(async () => {
-    setState({ status: "loading" });
+  /** `quiet` keeps the current values on screen while reading (no spinner). */
+  const load = useCallback(async (quiet = false) => {
+    if (!quiet) setState({ status: "loading" });
     try {
       const settings = await api.deviceSettings(device.id);
       setState({ status: "ready", settings });
@@ -56,6 +57,14 @@ export function DeviceSettingsPanel({ device }: { device: DeviceInfo }) {
   useEffect(() => {
     void load();
   }, [load]);
+
+  // A profile was applied (switched by hand, automatically, or on connect):
+  // the device may now use other values, so read them again.
+  const appliedRevision = useProfiles((s) => s.appliedRevision);
+  const firstRevision = useRef(appliedRevision);
+  useEffect(() => {
+    if (appliedRevision !== firstRevision.current) void load(true);
+  }, [appliedRevision, load]);
 
   const apply = async (change: SettingChange) => {
     setBusy(true);

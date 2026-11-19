@@ -22,6 +22,11 @@ interface ProfilesState {
   /** Linked app that selected the active profile, in automatic mode. */
   matchedApp: string | null;
   automaticSupported: boolean;
+  /**
+   * Increases every time a profile's settings are applied to devices, so views
+   * showing live device values know to read them again.
+   */
+  appliedRevision: number;
   status: Status;
   error: string | null;
   load: () => Promise<void>;
@@ -63,6 +68,7 @@ export const useProfiles = create<ProfilesState>((set, get) => ({
   mode: "automatic",
   matchedApp: null,
   automaticSupported: false,
+  appliedRevision: 0,
   status: "idle",
   error: null,
 
@@ -107,13 +113,23 @@ export const useProfiles = create<ProfilesState>((set, get) => ({
 
   activate: async (id) => {
     const report = await api.activateProfile(id);
-    set({ activeId: report.profile.id, mode: report.mode, matchedApp: report.matchedApp });
+    set((s) => ({
+      activeId: report.profile.id,
+      mode: report.mode,
+      matchedApp: report.matchedApp,
+      appliedRevision: s.appliedRevision + 1,
+    }));
     return report;
   },
 
   resumeAutomatic: async () => {
     const active = await api.resumeAutomaticSwitching();
-    set({ activeId: active.profile.id, mode: active.mode, matchedApp: active.matchedApp });
+    set((s) => ({
+      activeId: active.profile.id,
+      mode: active.mode,
+      matchedApp: active.matchedApp,
+      appliedRevision: s.appliedRevision + 1,
+    }));
   },
 
   watch: async () => {
@@ -121,7 +137,12 @@ export const useProfiles = create<ProfilesState>((set, get) => ({
     const { listen } = await import("@tauri-apps/api/event");
     return listen<ActivationReport>(PROFILE_APPLIED_EVENT, (event) => {
       const report = event.payload;
-      set({ activeId: report.profile.id, mode: report.mode, matchedApp: report.matchedApp });
+      set((s) => ({
+        activeId: report.profile.id,
+        mode: report.mode,
+        matchedApp: report.matchedApp,
+        appliedRevision: s.appliedRevision + 1,
+      }));
       // Activations started from this window already report their own result.
       if (report.reason !== "activated") reportActivation(report);
     });
