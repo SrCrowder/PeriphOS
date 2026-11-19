@@ -14,7 +14,7 @@ pub async fn get_device_overview(state: State<'_, AppState>) -> Result<DeviceOve
 }
 
 /// Runs blocking device I/O off the async runtime.
-async fn blocking<T: Send + 'static>(
+pub async fn blocking<T: Send + 'static>(
     app: AppHandle,
     f: impl FnOnce(&AppState) -> Result<T, CoreError> + Send + 'static,
 ) -> IpcResult<T> {

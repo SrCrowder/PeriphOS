@@ -7,6 +7,7 @@
 mod commands;
 mod device_watcher;
 mod error;
+mod profile_runtime;
 mod state;
 mod updates;
 
@@ -40,6 +41,11 @@ pub fn run() {
             commands::profiles::update_profile,
             commands::profiles::delete_profile,
             commands::profiles::set_default_profile,
+            commands::profiles::get_active_profile,
+            commands::profiles::activate_profile,
+            commands::profiles::list_profile_device_settings,
+            commands::profiles::save_device_settings_to_profile,
+            commands::profiles::delete_profile_device_settings,
             commands::settings::get_settings,
             commands::settings::update_settings,
             commands::updates::get_update_status,
