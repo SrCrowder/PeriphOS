@@ -56,10 +56,13 @@ what exists today. Legend: ✅ implemented, 🟡 partially implemented, ⏳ plan
 - ✅ When a device connects (or comes back after being switched off and losing its settings),
   the active profile's settings are applied to it
 
-- ⏳ Link profiles to applications: by executable, by picking a running process, and by
-  installed Microsoft Store / Game Pass package (no need to browse protected `WindowsApps` folders)
-- ⏳ Foreground application watcher and automatic profile switching
-- ⏳ Manual profile override
+- ✅ Link games and apps to profiles: pick an open application (Microsoft Store / Game Pass
+  games are linked by package, no need to browse protected `WindowsApps` folders) or choose an .exe
+- ✅ Automatic switching on Windows: the profile linked to the app in front activates, the default
+  profile otherwise
+- ✅ Manual override: activating a profile pauses automatic switching until it is resumed
+- ⏳ Pick installed Microsoft Store / Game Pass games that are not running
+- ⏳ Automatic switching on Linux (X11 first; Wayland needs desktop-specific support)
 - ⏳ Profiles shared by several devices
 - ⏳ Launch at startup and minimize to tray
 

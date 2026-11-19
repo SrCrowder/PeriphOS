@@ -155,6 +155,20 @@ through each device's driver. Settings are applied when a profile is activated a
 device appears in the device watcher's scan, which covers devices that were switched off and
 lost their settings. Every application is reported to the UI with a `profile-applied` event.
 
+## Automatic profile switching
+
+`crates/periphos-apps` reports the foreground application and the applications with open
+windows. On Windows it reads the foreground window's process, its executable path and, for
+Microsoft Store / Game Pass titles, the Package Family Name (`GetPackageFamilyName`), which
+identifies a game without access to its folder under `WindowsApps`. Other platforms return
+nothing for now.
+
+`app_rules` (schema v3) links an executable file name or a package family to one profile.
+`src-tauri/src/app_watcher.rs` checks the foreground app every second; in automatic mode the
+matching profile (package rules first) or the default profile becomes active. Activating a
+profile by hand switches to manual mode until the user resumes automatic switching. PeriphOS's
+own window never changes the profile.
+
 ## Persistence
 
 - One database file, `periphos.db`, in the OS app-data directory
