@@ -8,6 +8,8 @@ import { toast } from "@/stores/toasts";
 import { selectActiveProfile, useProfiles } from "@/stores/profiles";
 import type { DeviceInfo, DeviceSettings, SettingChange } from "@/types/device";
 
+import { WootingGuide } from "./WootingGuide";
+
 const number = new Intl.NumberFormat("en");
 
 type State =
@@ -26,10 +28,21 @@ function nearestIndex(values: number[], target: number): number {
 }
 
 function describe(change: SettingChange): string {
-  return change.type === "dpi"
-    ? `${number.format(change.value)} DPI`
-    : `${number.format(change.value)} Hz`;
+  switch (change.type) {
+    case "dpi":
+      return `${number.format(change.value)} DPI`;
+    case "reportRateHz":
+      return `${number.format(change.value)} Hz`;
+    case "onboardProfile":
+      return `profile ${change.value + 1}`;
+  }
 }
+
+const SETTING_NAME: Record<SettingChange["type"], string> = {
+  dpi: "Sensitivity",
+  reportRateHz: "Report rate",
+  onboardProfile: "Keyboard",
+};
 
 /**
  * Live settings read from the device. Hidden for devices whose driver cannot
@@ -76,7 +89,7 @@ export function DeviceSettingsPanel({ device }: { device: DeviceInfo }) {
       if (result.tookEffect) {
         // Changes belong to the active profile: store the device's settings there.
         const profile = selectActiveProfile(useProfiles.getState());
-        const what = `${change.type === "dpi" ? "Sensitivity" : "Report rate"} set to ${describe(change)}`;
+        const what = `${SETTING_NAME[change.type]} set to ${describe(change)}`;
         if (profile) {
           try {
             await api.saveDeviceSettingsToProfile(profile.id, device.id);
@@ -140,6 +153,18 @@ export function DeviceSettingsPanel({ device }: { device: DeviceInfo }) {
 
       {state.status === "ready" && (
         <div className="flex flex-col gap-6">
+          {device.driverId === "wooting" && <WootingGuide />}
+
+          {state.settings.conflictingSoftware.map((name) => (
+            <p key={name} className="flex gap-2.5 rounded-2xl bg-warning/10 px-4 py-3 text-[13px] text-warning">
+              <TriangleAlert className="mt-0.5 size-4 shrink-0" />
+              <span>
+                <span className="font-semibold">{name} is running.</span> It also controls this device and
+                can undo the changes made here. Close it, including from the system tray, while PeriphOS
+                manages the device.
+              </span>
+            </p>
+          ))}
           {state.settings.onboardProfileActive && (
             <p className="flex gap-2.5 rounded-2xl bg-warning/10 px-4 py-3 text-[13px] text-warning">
               <TriangleAlert className="mt-0.5 size-4 shrink-0" />
@@ -182,7 +207,30 @@ export function DeviceSettingsPanel({ device }: { device: DeviceInfo }) {
             </div>
           )}
 
-          {!state.settings.dpi && !state.settings.reportRate && (
+          {state.settings.onboardProfile && (
+            <div className="flex flex-wrap items-center justify-between gap-4">
+              <div>
+                <p className="text-sm font-semibold">Keyboard profile</p>
+                <p className="text-[13px] text-muted">
+                  Profile {state.settings.onboardProfile.current + 1} of {state.settings.onboardProfile.count} is
+                  active on the keyboard.
+                </p>
+              </div>
+              <SegmentedControl
+                label="Keyboard profile"
+                value={String(state.settings.onboardProfile.current)}
+                options={Array.from({ length: state.settings.onboardProfile.count }, (_, i) => ({
+                  value: String(i),
+                  label: `Profile ${i + 1}`,
+                }))}
+                onChange={(i) => {
+                  if (!busy) void apply({ type: "onboardProfile", value: Number(i) });
+                }}
+              />
+            </div>
+          )}
+
+          {!state.settings.dpi && !state.settings.reportRate && !state.settings.onboardProfile && (
             <p className="text-[13px] text-muted">This device has no settings PeriphOS can change yet.</p>
           )}
         </div>

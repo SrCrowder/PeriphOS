@@ -25,6 +25,8 @@ export interface DeviceProfileSettings {
   deviceName: string;
   dpi: number | null;
   reportRateHz: number | null;
+  /** Zero-based onboard profile. */
+  onboardProfile: number | null;
   updatedAt: number;
 }
 

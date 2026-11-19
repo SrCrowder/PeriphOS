@@ -177,6 +177,7 @@ const handlers: { [C in CommandName]: (args: Commands[C]["args"]) => Commands[C]
         const live = fixtureSettings.get(s.deviceId);
         if (live?.dpi && s.dpi) live.dpi.current = s.dpi;
         if (live?.reportRate && s.reportRateHz) live.reportRate.currentHz = s.reportRateHz;
+        if (live?.onboardProfile && s.onboardProfile != null) live.onboardProfile.current = s.onboardProfile;
         return { deviceId: s.deviceId, deviceName: s.deviceName, applied: true, message: null };
       });
     return { profile, mode: "manual", matchedApp: null, reason: "activated", results };
@@ -193,6 +194,7 @@ const handlers: { [C in CommandName]: (args: Commands[C]["args"]) => Commands[C]
       deviceName: device.name,
       dpi: live.dpi?.current ?? null,
       reportRateHz: live.reportRate?.currentHz ?? null,
+      onboardProfile: live.onboardProfile?.current ?? null,
       updatedAt: Date.now(),
     };
     deviceSettings = [...deviceSettings.filter((s) => !(s.profileId === profileId && s.deviceId === deviceId)), entry];
@@ -217,7 +219,11 @@ const handlers: { [C in CommandName]: (args: Commands[C]["args"]) => Commands[C]
   apply_device_setting: ({ deviceId, change }) => {
     const settings = fixtureSettings.get(deviceId);
     if (!settings) return fail("unsupported", "this device's settings cannot be changed yet");
-    if (change.type === "dpi") {
+    if (change.type === "onboardProfile") {
+      if (!settings.onboardProfile || change.value >= settings.onboardProfile.count)
+        fail("validation", "Choose a keyboard profile from 1 to 4.");
+      settings.onboardProfile!.current = change.value;
+    } else if (change.type === "dpi") {
       if (!settings.dpi?.values.includes(change.value)) fail("device", `${change.value} DPI is not a value this mouse accepts.`);
       settings.dpi!.current = change.value;
     } else {

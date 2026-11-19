@@ -89,15 +89,28 @@ export interface ReportRateSetting {
   valuesHz: number[];
 }
 
+export interface OnboardProfileSetting {
+  /** Zero-based index of the active onboard profile. */
+  current: number;
+  count: number;
+}
+
 /** Live settings read from the device. `null`: not supported. */
 export interface DeviceSettings {
   dpi: DpiSetting | null;
   reportRate: ReportRateSetting | null;
   /** True when a profile stored in the device's memory is in control. */
   onboardProfileActive: boolean | null;
+  /** Which onboard profile is in use, for devices whose profiles PeriphOS switches. */
+  onboardProfile: OnboardProfileSetting | null;
+  /** Other software running now that also controls this device. */
+  conflictingSoftware: string[];
 }
 
-export type SettingChange = { type: "dpi"; value: number } | { type: "reportRateHz"; value: number };
+export type SettingChange =
+  | { type: "dpi"; value: number }
+  | { type: "reportRateHz"; value: number }
+  | { type: "onboardProfile"; value: number };
 
 export interface SettingResult {
   settings: DeviceSettings;

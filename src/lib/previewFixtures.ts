@@ -30,8 +30,8 @@ export const PREVIEW_FIXTURE_DEVICES: DeviceInfo[] = [
     ],
   },
   {
-    id: "hid-generic:31e3:1402:0",
-    driverId: "hid-generic",
+    id: "wooting:1400:0",
+    driverId: "wooting",
     name: "80HE",
     manufacturer: "Wooting",
     vendorId: 0x31e3,
@@ -42,7 +42,7 @@ export const PREVIEW_FIXTURE_DEVICES: DeviceInfo[] = [
     interfaceCount: 6,
     battery: null,
     connectedVia: null,
-    note: "Settings are stored on the keyboard and configured through Wooting's protocol, which PeriphOS does not implement yet.",
+    note: "PeriphOS switches between the profiles stored on this keyboard. Set them up in Wootility, then close Wootility while PeriphOS manages the keyboard.",
     capabilities: [
       {
         kind: { type: "analogKeys" },
@@ -52,6 +52,11 @@ export const PREVIEW_FIXTURE_DEVICES: DeviceInfo[] = [
       { kind: { type: "keyRemap" }, support: "vendorProtocol" },
       { kind: { type: "pollingRate", maxHz: 8000 }, support: "vendorProtocol" },
       { kind: { type: "lighting", perKey: true, zones: null }, support: "vendorProtocol" },
+      {
+        kind: { type: "onboardProfiles", slots: 4 },
+        support: "native",
+        note: "Switches between the four profiles stored on the keyboard. Actuation point, rapid trigger, key bindings and lighting are set up per profile in Wootility.",
+      },
     ],
   },
   {
@@ -118,6 +123,18 @@ export function previewFixtureSettings(): Map<string, DeviceSettings> {
         dpi: { current: 1600, values: dpiValues },
         reportRate: { currentHz: 1000, valuesHz: [125, 250, 500, 1000] },
         onboardProfileActive: false,
+        onboardProfile: null,
+        conflictingSoftware: ["Logitech G HUB"],
+      },
+    ],
+    [
+      "wooting:1400:0",
+      {
+        dpi: null,
+        reportRate: null,
+        onboardProfileActive: null,
+        onboardProfile: { current: 0, count: 4 },
+        conflictingSoftware: [],
       },
     ],
   ]);
