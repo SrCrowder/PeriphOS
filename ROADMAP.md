@@ -49,6 +49,16 @@ what exists today. Legend: ✅ implemented, 🟡 partially implemented, ⏳ plan
 - ⏳ Devices connected by cable and over Bluetooth
 - ⏳ Linux: avoid listing a receiver-connected device twice (the kernel also exposes it)
 
+## Wooting driver 🟡
+
+- ✅ Wooting keyboards listed by their own driver (`wooting`)
+- ✅ Switch between the four profiles stored on the keyboard; the choice is saved per PeriphOS
+  profile, so each game can use a different keyboard profile (actuation, rapid trigger, key
+  bindings and lighting are set up in Wootility)
+- ✅ In-app guide and a warning while Wootility is running
+- ⏳ Basic lighting control (a fixed colour per profile)
+- ⏳ Reading analog key values
+
 ## Phase 3: Profiles and game detection 🟡
 
 - ✅ Device changes are saved straight into the active profile
@@ -64,6 +74,7 @@ what exists today. Legend: ✅ implemented, 🟡 partially implemented, ⏳ plan
 - ✅ Manual override: activating a profile pauses automatic switching until it is resumed
 - ✅ Pick installed Microsoft Store / Game Pass games without starting them (games first, all
   apps on request)
+- ✅ Warn when other software that also controls a device is running (Logitech G HUB, Wootility)
 - ⏳ Automatic switching on Linux (X11 first; Wayland needs desktop-specific support)
 - ⏳ Profiles shared by several devices
 - ✅ Keep running in the system tray when the window is closed (single instance)

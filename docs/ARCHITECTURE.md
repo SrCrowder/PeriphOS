@@ -145,7 +145,22 @@ rate (`0x8060` / `0x8061`). It reports whether an onboard profile is active (`0x
 Known gap: on Linux the kernel's `hid-logitech-dj` driver also exposes devices connected
 through a receiver as their own HID devices, so they may be listed twice.
 
-Next drivers: Wooting (open SDKs) and more of HID++ (DPI, report rate).
+### `wooting` (crates/periphos-wooting)
+
+Lists Wooting keyboards (the generic driver leaves vendor `31E3` to it) and switches between
+the four profiles stored on the keyboard. Each of those profiles holds actuation points, rapid
+trigger, key bindings and lighting configured in Wootility; PeriphOS chooses which one is
+active, per PeriphOS profile.
+
+- Commands are 8-byte feature reports on the configuration interface (usage page `0x1337`, or
+  `0xFF55` on newer firmware with numbered single-report responses); each is answered with an
+  input report.
+- To switch: activate profile, reload it, then reset and refresh the lighting so it follows the
+  profile, with a short pause between commands; then read the active profile back.
+- Implemented from public protocol facts (Wooting's open RGB SDK, MPL-2.0, and Wooting Profile
+  Switcher by ShayBox, MIT). No code from either project is used.
+- Wootility must not run at the same time; the app warns when it does
+  (`src-tauri/src/conflicts.rs` checks running processes for known manufacturer apps).
 
 ## Profiles at runtime
 
