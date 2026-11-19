@@ -77,3 +77,30 @@ export interface DeviceOverview {
   devices: DeviceInfo[];
   driverErrors: DriverError[];
 }
+
+export interface DpiSetting {
+  current: number;
+  /** Accepted values, ascending. */
+  values: number[];
+}
+
+export interface ReportRateSetting {
+  currentHz: number;
+  valuesHz: number[];
+}
+
+/** Live settings read from the device. `null`: not supported. */
+export interface DeviceSettings {
+  dpi: DpiSetting | null;
+  reportRate: ReportRateSetting | null;
+  /** True when a profile stored in the device's memory is in control. */
+  onboardProfileActive: boolean | null;
+}
+
+export type SettingChange = { type: "dpi"; value: number } | { type: "reportRateHz"; value: number };
+
+export interface SettingResult {
+  settings: DeviceSettings;
+  /** False when the device reports a different value after the change. */
+  tookEffect: boolean;
+}

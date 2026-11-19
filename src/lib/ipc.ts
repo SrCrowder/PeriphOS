@@ -7,7 +7,7 @@
  * in-memory preview backend so the interface can be developed and reviewed.
  */
 import type { AppInfo } from "@/types/app";
-import type { DeviceOverview } from "@/types/device";
+import type { DeviceOverview, DeviceSettings, SettingChange, SettingResult } from "@/types/device";
 import type { Profile, ProfileDraft } from "@/types/profile";
 import type { AppSettings } from "@/types/settings";
 import type { UpdateCheck, UpdateStatus } from "@/types/updates";
@@ -17,6 +17,8 @@ import { toIpcError } from "./errors";
 export interface Commands {
   get_app_info: { args: undefined; result: AppInfo };
   get_device_overview: { args: undefined; result: DeviceOverview };
+  get_device_settings: { args: { deviceId: string }; result: DeviceSettings };
+  apply_device_setting: { args: { deviceId: string; change: SettingChange }; result: SettingResult };
   list_profiles: { args: undefined; result: Profile[] };
   create_profile: { args: { draft: ProfileDraft }; result: Profile };
   update_profile: { args: { id: string; draft: ProfileDraft }; result: Profile };
@@ -52,6 +54,9 @@ async function call<C extends CommandName>(command: C, args?: Args<C>): Promise<
 export const api = {
   appInfo: () => call("get_app_info"),
   deviceOverview: () => call("get_device_overview"),
+  deviceSettings: (deviceId: string) => call("get_device_settings", { deviceId }),
+  applyDeviceSetting: (deviceId: string, change: SettingChange) =>
+    call("apply_device_setting", { deviceId, change }),
   listProfiles: () => call("list_profiles"),
   createProfile: (draft: ProfileDraft) => call("create_profile", { draft }),
   updateProfile: (id: string, draft: ProfileDraft) => call("update_profile", { id, draft }),

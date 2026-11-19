@@ -4,7 +4,7 @@
  * builds and never shown in the desktop app. Keep in sync with
  * crates/periphos-hid/devices.json when changing the device model.
  */
-import type { DeviceInfo } from "@/types/device";
+import type { DeviceInfo, DeviceSettings } from "@/types/device";
 
 export const PREVIEW_FIXTURE_DEVICES: DeviceInfo[] = [
   {
@@ -99,7 +99,26 @@ export const PREVIEW_FIXTURE_DEVICES: DeviceInfo[] = [
     interfaceCount: 0,
     battery: { percent: 64, level: null, charging: "discharging", estimated: true },
     connectedVia: "LIGHTSPEED receiver",
-    note: "Identified through Logitech's HID++ protocol. Settings cannot be changed from PeriphOS yet.",
-    capabilities: [{ kind: { type: "battery" }, support: "native" }],
+    note: "Identified through Logitech's HID++ protocol. Sensitivity and report rate can be changed below; other settings cannot be changed from PeriphOS yet.",
+    capabilities: [
+      { kind: { type: "dpi", min: 100, max: 25600, step: null }, support: "native" },
+      { kind: { type: "pollingRate", maxHz: 1000 }, support: "native" },
+      { kind: { type: "battery" }, support: "native" },
+    ],
   },
 ];
+
+/** Simulated live settings for the receiver-connected fixture mouse. */
+export function previewFixtureSettings(): Map<string, DeviceSettings> {
+  const dpiValues = Array.from({ length: 511 }, (_, i) => 100 + i * 50);
+  return new Map([
+    [
+      "logitech-hidpp:c547:0:1",
+      {
+        dpi: { current: 1600, values: dpiValues },
+        reportRate: { currentHz: 1000, valuesHz: [125, 250, 500, 1000] },
+        onboardProfileActive: false,
+      },
+    ],
+  ]);
+}

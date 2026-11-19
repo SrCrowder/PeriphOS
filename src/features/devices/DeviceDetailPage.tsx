@@ -8,6 +8,7 @@ import { useNavigation } from "@/stores/navigation";
 
 import { BatteryIndicator, batteryText } from "./BatteryIndicator";
 import { DeviceIllustration } from "./DeviceIllustration";
+import { DeviceSettingsPanel } from "./DeviceSettingsPanel";
 import { describeCapability, describeDevice } from "./labels";
 import { SUPPORT_LEVELS } from "./supportLevels";
 
@@ -74,6 +75,8 @@ export function DeviceDetailPage() {
           </div>
         )}
       </section>
+
+      <DeviceSettingsPanel key={device.id} device={device} />
 
       <div className="grid gap-4 lg:grid-cols-[1.6fr_1fr]">
         <Panel

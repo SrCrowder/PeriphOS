@@ -9,7 +9,7 @@
  * the example devices from `previewFixtures.ts` (development server only).
  */
 import type { IpcError } from "@/types/app";
-import type { DeviceInfo } from "@/types/device";
+import type { DeviceInfo, DeviceSettings } from "@/types/device";
 import type { Profile, ProfileDraft } from "@/types/profile";
 import { PROFILE_DESCRIPTION_MAX, PROFILE_NAME_MAX } from "@/types/profile";
 import { DEFAULT_SETTINGS, type AppSettings } from "@/types/settings";
@@ -30,8 +30,11 @@ let profiles: Profile[] = [
 let settings: AppSettings = { ...DEFAULT_SETTINGS };
 
 let fixtureDevices: DeviceInfo[] = [];
+let fixtureSettings = new Map<string, DeviceSettings>();
 if (import.meta.env.DEV && new URLSearchParams(location.search).has("fixtures")) {
-  fixtureDevices = (await import("./previewFixtures")).PREVIEW_FIXTURE_DEVICES;
+  const fixtures = await import("./previewFixtures");
+  fixtureDevices = fixtures.PREVIEW_FIXTURE_DEVICES;
+  fixtureSettings = fixtures.previewFixtureSettings();
 }
 
 function fail(code: IpcError["code"], message: string): never {
@@ -116,6 +119,22 @@ const handlers: { [C in CommandName]: (args: Commands[C]["args"]) => Commands[C]
       p.id === id ? { ...p, isDefault: true, updatedAt: Date.now() } : { ...p, isDefault: false },
     );
     return find(id);
+  },
+  get_device_settings: ({ deviceId }) => {
+    const settings = fixtureSettings.get(deviceId);
+    return settings ? structuredClone(settings) : fail("unsupported", "this device's settings cannot be read yet");
+  },
+  apply_device_setting: ({ deviceId, change }) => {
+    const settings = fixtureSettings.get(deviceId);
+    if (!settings) return fail("unsupported", "this device's settings cannot be changed yet");
+    if (change.type === "dpi") {
+      if (!settings.dpi?.values.includes(change.value)) fail("device", `${change.value} DPI is not a value this mouse accepts.`);
+      settings.dpi!.current = change.value;
+    } else {
+      if (!settings.reportRate?.valuesHz.includes(change.value)) fail("device", `${change.value} Hz is not a rate this device accepts.`);
+      settings.reportRate!.currentHz = change.value;
+    }
+    return { settings: structuredClone(settings), tookEffect: true };
   },
   get_update_status: () => ({
     currentVersion: "0.1.0",
