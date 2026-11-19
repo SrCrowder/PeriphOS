@@ -33,6 +33,8 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             commands::app::get_app_info,
             commands::devices::get_device_overview,
+            commands::devices::get_device_settings,
+            commands::devices::apply_device_setting,
             commands::profiles::list_profiles,
             commands::profiles::create_profile,
             commands::profiles::update_profile,
