@@ -53,5 +53,16 @@ protocol, document where the knowledge comes from (your own captures, public
 documentation, or an open-source project with a compatible license). Do not contribute
 code copied from proprietary software.
 
+### Adding a model to the device database
+
+Known models live in `crates/periphos-hid/devices.json`. To add one:
+
+1. Run `cargo run -p periphos-hid --example scan` with the device connected to get its USB ID.
+2. Add an entry with its name, type, capabilities and the `sources` you used (manufacturer
+   specification pages are best). Leave out details you cannot source.
+3. Use `"support": "vendorProtocol"` for hardware features: the generic driver cannot change
+   them. Only a driver that really implements a feature may report `native` or `software`.
+4. Run `cargo test -p periphos-hid`.
+
 If you do not write code, opening a **Device support request** issue with your device's
 details is still very helpful.

@@ -23,13 +23,19 @@ what exists today. Legend: ✅ implemented, 🟡 partially implemented, ⏳ plan
 - ⏳ Windows code signing (removes the SmartScreen warning)
 - ⏳ Linux AppImage updates
 
-## Phase 2: Device management ⏳
+## Phase 2: Device management ✅
 
-- ⏳ Windows-first USB HID enumeration driver (`hid-generic`), designed to also run on Linux (hidraw)
-- ⏳ Identify manufacturer, model, VID/PID, interface and connection type
-- ⏳ Device connection and disconnection events pushed to the UI
-- ⏳ Device detail page with capabilities and their support level
-- ⏳ Device database (known VID/PID to model and capabilities)
+- ✅ Generic HID driver (`hid-generic`) for Windows and Linux: identifies mice, keyboards,
+  controllers and known receivers without changing any device setting
+- ✅ Manufacturer, model, USB ID, device type and connection type (USB, Bluetooth, receiver)
+- ✅ Connection and disconnection pushed to the UI (2-second polling)
+- ✅ Device detail page with each feature and its support level
+- ✅ Device database with sources (`crates/periphos-hid/devices.json`): Logitech G502 X family
+  and LIGHTSPEED receiver, Wooting keyboards (80HE with full feature list)
+- 🟡 Wireless devices behind a receiver show up as the receiver until the vendor protocol
+  (e.g. Logitech HID++) is implemented
+- 🟡 Two identical devices without a serial number are shown as one
+- ⏳ Native hotplug notifications (WM_DEVICECHANGE on Windows, udev monitor on Linux)
 
 ## Phase 3: Profiles and game detection ⏳
 
@@ -49,7 +55,8 @@ what exists today. Legend: ✅ implemented, 🟡 partially implemented, ⏳ plan
 ## Phase 5: Advanced features ⏳
 
 - ⏳ RGB Studio and lighting adapters
-- ⏳ First manufacturer-specific drivers (onboard DPI, polling rate, onboard profiles)
+- ⏳ First manufacturer-specific drivers (onboard DPI, polling rate, onboard profiles):
+  Logitech HID++ (documented by the Solaar and libratbag projects) and Wooting (open SDKs)
 - ⏳ **Wireless battery monitor**: battery level of wireless mice, keyboards and headsets,
   with low-battery notifications and a tray indicator
 - ⏳ Profile import/export and full backup/restore

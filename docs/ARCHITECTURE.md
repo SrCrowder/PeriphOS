@@ -82,10 +82,31 @@ when the first real driver needs them, rather than guessed in advance. Drivers d
 platforms they support and `DeviceManager::register` ignores the others, so Windows-only
 and Linux-only drivers can coexist. A failing driver never hides the results of the others.
 
-Planned driver order: `hid-generic` (identification only, via the `hidapi` crate, which
-works on Windows and Linux), then vendor protocols where open documentation or
-compatible open-source implementations exist (e.g. Logitech HID++ as documented by the
-Solaar and libratbag projects).
+### `hid-generic` (crates/periphos-hid)
+
+The first driver identifies devices through the `hidapi` crate (Windows HID API, Linux
+hidraw via udev). It only reads descriptors and never opens a device, so it needs no special
+permissions on either platform.
+
+- HID interfaces are grouped into one device by vendor ID, product ID and serial number.
+- A group is reported when it exposes a mouse, keyboard, joystick or gamepad top-level
+  collection (Generic Desktop usage page), or when it is a known model. Vendor-only devices
+  such as RGB controllers are skipped.
+- The main type comes from the lowest-numbered input interface (mice often add a keyboard
+  interface for macros).
+- `devices.json` maps USB IDs to model names and capabilities. Every entry cites its sources.
+  `productIdMask` handles devices whose product ID changes with a mode (Wooting keyboards
+  change the last hex digit with the controller emulation mode).
+- Because it only identifies hardware, every feature it lists is `vendorProtocol` until a
+  manufacturer driver implements it.
+- `cargo run -p periphos-hid --example scan` prints what it detects.
+
+The app rescans every two seconds on a background thread (`src-tauri/src/device_watcher.rs`)
+and emits a `devices-changed` event when the result changes.
+
+Next drivers: vendor protocols where open documentation or compatible open-source
+implementations exist (Logitech HID++ as documented by the Solaar and libratbag projects,
+Wooting's open SDKs).
 
 ## Persistence
 
@@ -111,7 +132,8 @@ Solaar and libratbag projects).
   The default visual style is "Tactile" ([docs/design](design/README.md)); alternative styles
   are planned as a `data-style` variant over the same tokens, so components never hard-code colors.
 - Running `npm run dev` in a browser uses `src/lib/previewBackend.ts`, an in-memory
-  implementation of the same commands, shown with a banner. It never reports hardware.
+  implementation of the same commands, shown with a banner. It never reports hardware;
+  adding `?fixtures` to the URL (dev server only) shows example devices for UI work.
 
 ## Platform and hardware limitations
 
