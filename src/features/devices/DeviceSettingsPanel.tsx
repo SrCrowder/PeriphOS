@@ -7,6 +7,8 @@ import { toIpcError } from "@/lib/errors";
 import { toast } from "@/stores/toasts";
 import type { DeviceInfo, DeviceSettings, SettingChange } from "@/types/device";
 
+import { SaveToProfile } from "./SaveToProfile";
+
 const number = new Intl.NumberFormat("en");
 
 type State =
@@ -81,7 +83,7 @@ export function DeviceSettingsPanel({ device }: { device: DeviceInfo }) {
   return (
     <Panel
       title="Settings"
-      description="Read from the device just now. Changes apply right away; they are not saved in PeriphOS profiles yet."
+      description="Read from the device just now. Changes apply right away; save them to a profile to keep them."
       actions={
         <Button
           size="sm"
@@ -153,8 +155,10 @@ export function DeviceSettingsPanel({ device }: { device: DeviceInfo }) {
             </div>
           )}
 
-          {!state.settings.dpi && !state.settings.reportRate && (
+          {!state.settings.dpi && !state.settings.reportRate ? (
             <p className="text-[13px] text-muted">This device has no settings PeriphOS can change yet.</p>
+          ) : (
+            <SaveToProfile deviceId={device.id} deviceName={device.name} />
           )}
         </div>
       )}

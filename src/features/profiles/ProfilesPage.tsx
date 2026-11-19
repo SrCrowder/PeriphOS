@@ -4,7 +4,7 @@ import { useState } from "react";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Button, ConfirmDialog, EmptyState, Panel, PlannedTag, Spinner } from "@/components/ui";
 import { errorMessage } from "@/lib/errors";
-import { useProfiles } from "@/stores/profiles";
+import { reportActivation, useProfiles } from "@/stores/profiles";
 import { toast } from "@/stores/toasts";
 import type { Profile } from "@/types/profile";
 
@@ -12,7 +12,8 @@ import { ProfileFormDialog } from "./ProfileFormDialog";
 import { ProfileRow } from "./ProfileRow";
 
 export function ProfilesPage() {
-  const { profiles, status, error, load, remove, setDefault } = useProfiles();
+  const { profiles, activeId, status, error, load, remove, setDefault, activate } = useProfiles();
+  const [activating, setActivating] = useState<string | null>(null);
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<Profile | null>(null);
   const [deleting, setDeleting] = useState<Profile | null>(null);
@@ -20,6 +21,17 @@ export function ProfilesPage() {
   const openCreate = () => {
     setEditing(null);
     setFormOpen(true);
+  };
+
+  const activateProfile = async (profile: Profile) => {
+    setActivating(profile.id);
+    try {
+      reportActivation(await activate(profile.id));
+    } catch (e) {
+      toast.error(errorMessage(e));
+    } finally {
+      setActivating(null);
+    }
   };
 
   const makeDefault = async (profile: Profile) => {
@@ -35,7 +47,7 @@ export function ProfilesPage() {
     <>
       <PageHeader
         title="Profiles"
-        description="Profiles hold the settings that should be active together. The default profile applies whenever no other profile matches."
+        description="A profile holds device settings that apply together. Activating a profile applies its settings to connected devices; the default profile is active when PeriphOS starts."
         actions={
           <Button variant="primary" icon={<Plus className="size-4" />} onClick={openCreate}>
             New profile
@@ -63,6 +75,9 @@ export function ProfilesPage() {
                 <ProfileRow
                   key={profile.id}
                   profile={profile}
+                  active={profile.id === activeId}
+                  activating={activating === profile.id}
+                  onActivate={() => void activateProfile(profile)}
                   onEdit={() => {
                     setEditing(profile);
                     setFormOpen(true);

@@ -18,3 +18,27 @@ export interface ProfileDraft {
   name: string;
   description: string | null;
 }
+
+/** Device settings saved in a profile. */
+export interface DeviceProfileSettings {
+  deviceId: string;
+  deviceName: string;
+  dpi: number | null;
+  reportRateHz: number | null;
+  updatedAt: number;
+}
+
+export interface DeviceApplyResult {
+  deviceId: string;
+  deviceName: string;
+  applied: boolean;
+  message: string | null;
+}
+
+export interface ActivationReport {
+  profile: Profile;
+  reason: "activated" | "deviceConnected";
+  results: DeviceApplyResult[];
+}
+
+export const PROFILE_APPLIED_EVENT = "profile-applied";

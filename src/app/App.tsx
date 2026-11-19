@@ -32,6 +32,11 @@ export function App() {
   useThemeSync();
 
   useEffect(() => {
+    const unwatch = useProfiles.getState().watch();
+    return () => void unwatch.then((stop) => stop());
+  }, []);
+
+  useEffect(() => {
     void useDevices.getState().scan();
     const unwatch = useDevices.getState().watch();
     return () => void unwatch.then((stop) => stop());

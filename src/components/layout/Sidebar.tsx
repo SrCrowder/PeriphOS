@@ -2,7 +2,7 @@ import { NAV_ITEMS } from "@/app/navigation";
 import { cn } from "@/lib/cn";
 import { useAppInfo } from "@/stores/appInfo";
 import { useNavigation } from "@/stores/navigation";
-import { selectDefaultProfile, useProfiles } from "@/stores/profiles";
+import { selectActiveProfile, useProfiles } from "@/stores/profiles";
 import { useUpdates } from "@/stores/updates";
 
 import { Logo } from "./Logo";
@@ -20,7 +20,7 @@ export function Led({ on, className }: { on: boolean; className?: string }) {
 export function Sidebar() {
   const page = useNavigation((s) => s.page);
   const navigate = useNavigation((s) => s.navigate);
-  const activeProfile = useProfiles(selectDefaultProfile);
+  const activeProfile = useProfiles(selectActiveProfile);
   const version = useAppInfo((s) => s.info?.version);
   const availableVersion = useUpdates((s) => (s.phase === "available" ? s.result?.version : null));
 

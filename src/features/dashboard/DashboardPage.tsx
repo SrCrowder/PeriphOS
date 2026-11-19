@@ -6,7 +6,7 @@ import { formatRelative, PLATFORM_LABEL } from "@/lib/format";
 import { useAppInfo } from "@/stores/appInfo";
 import { useDevices } from "@/stores/devices";
 import { useNavigation } from "@/stores/navigation";
-import { selectDefaultProfile, useProfiles } from "@/stores/profiles";
+import { selectActiveProfile, useProfiles } from "@/stores/profiles";
 
 import { BatteryIndicator } from "@/features/devices/BatteryIndicator";
 import { isPhysical } from "@/features/devices/labels";
@@ -20,7 +20,7 @@ export function DashboardPage() {
   const navigate = useNavigation((s) => s.navigate);
   const openDevice = useNavigation((s) => s.openDevice);
   const profiles = useProfiles((s) => s.profiles);
-  const activeProfile = useProfiles(selectDefaultProfile);
+  const activeProfile = useProfiles(selectActiveProfile);
   const overview = useDevices((s) => s.overview);
   const info = useAppInfo((s) => s.info);
 
@@ -38,8 +38,7 @@ export function DashboardPage() {
             {activeProfile?.name ?? " "}
           </p>
           <p className="mt-4 max-w-md text-sm font-medium opacity-80">
-            {activeProfile?.description ?? "Used when no application-specific profile applies."}{" "}
-            Per-game switching arrives in Phase 3.
+            {activeProfile?.description ?? "Used when no application-specific profile applies."}
           </p>
         </div>
         <button

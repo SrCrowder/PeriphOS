@@ -10,7 +10,7 @@
  */
 import type { IpcError } from "@/types/app";
 import type { DeviceInfo, DeviceSettings } from "@/types/device";
-import type { Profile, ProfileDraft } from "@/types/profile";
+import type { DeviceProfileSettings, Profile, ProfileDraft } from "@/types/profile";
 import { PROFILE_DESCRIPTION_MAX, PROFILE_NAME_MAX } from "@/types/profile";
 import { DEFAULT_SETTINGS, type AppSettings } from "@/types/settings";
 
@@ -28,6 +28,12 @@ let profiles: Profile[] = [
   },
 ];
 let settings: AppSettings = { ...DEFAULT_SETTINGS };
+let activeProfileId: string | null = null;
+let deviceSettings: (DeviceProfileSettings & { profileId: string })[] = [];
+
+function activeProfile(): Profile {
+  return profiles.find((p) => p.id === activeProfileId) ?? profiles.find((p) => p.isDefault)!;
+}
 
 let fixtureDevices: DeviceInfo[] = [];
 let fixtureSettings = new Map<string, DeviceSettings>();
@@ -111,6 +117,45 @@ const handlers: { [C in CommandName]: (args: Commands[C]["args"]) => Commands[C]
         "The default profile cannot be deleted. Set another profile as default first.",
       );
     profiles = profiles.filter((p) => p.id !== id);
+    deviceSettings = deviceSettings.filter((s) => s.profileId !== id);
+    if (activeProfileId === id) activeProfileId = null;
+    return null;
+  },
+  get_active_profile: () => activeProfile(),
+  activate_profile: ({ id }) => {
+    const profile = find(id);
+    activeProfileId = id;
+    const connected = new Set(fixtureDevices.map((d) => d.id));
+    const results = deviceSettings
+      .filter((s) => s.profileId === id && connected.has(s.deviceId))
+      .map((s) => {
+        const live = fixtureSettings.get(s.deviceId);
+        if (live?.dpi && s.dpi) live.dpi.current = s.dpi;
+        if (live?.reportRate && s.reportRateHz) live.reportRate.currentHz = s.reportRateHz;
+        return { deviceId: s.deviceId, deviceName: s.deviceName, applied: true, message: null };
+      });
+    return { profile, reason: "activated", results };
+  },
+  list_profile_device_settings: ({ profileId }) =>
+    deviceSettings.filter((s) => s.profileId === profileId).map(({ profileId: _, ...s }) => s),
+  save_device_settings_to_profile: ({ profileId, deviceId }) => {
+    find(profileId);
+    const device = fixtureDevices.find((d) => d.id === deviceId) ?? fail("device", "The device is not connected.");
+    const live = fixtureSettings.get(deviceId) ?? fail("unsupported", "this device's settings cannot be read yet");
+    const entry = {
+      profileId,
+      deviceId,
+      deviceName: device.name,
+      dpi: live.dpi?.current ?? null,
+      reportRateHz: live.reportRate?.currentHz ?? null,
+      updatedAt: Date.now(),
+    };
+    deviceSettings = [...deviceSettings.filter((s) => !(s.profileId === profileId && s.deviceId === deviceId)), entry];
+    const { profileId: _, ...saved } = entry;
+    return saved;
+  },
+  delete_profile_device_settings: ({ profileId, deviceId }) => {
+    deviceSettings = deviceSettings.filter((s) => !(s.profileId === profileId && s.deviceId === deviceId));
     return null;
   },
   set_default_profile: ({ id }) => {

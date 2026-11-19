@@ -8,7 +8,7 @@
  */
 import type { AppInfo } from "@/types/app";
 import type { DeviceOverview, DeviceSettings, SettingChange, SettingResult } from "@/types/device";
-import type { Profile, ProfileDraft } from "@/types/profile";
+import type { ActivationReport, DeviceProfileSettings, Profile, ProfileDraft } from "@/types/profile";
 import type { AppSettings } from "@/types/settings";
 import type { UpdateCheck, UpdateStatus } from "@/types/updates";
 
@@ -24,6 +24,14 @@ export interface Commands {
   update_profile: { args: { id: string; draft: ProfileDraft }; result: Profile };
   delete_profile: { args: { id: string }; result: null };
   set_default_profile: { args: { id: string }; result: Profile };
+  get_active_profile: { args: undefined; result: Profile };
+  activate_profile: { args: { id: string }; result: ActivationReport };
+  list_profile_device_settings: { args: { profileId: string }; result: DeviceProfileSettings[] };
+  save_device_settings_to_profile: {
+    args: { profileId: string; deviceId: string };
+    result: DeviceProfileSettings;
+  };
+  delete_profile_device_settings: { args: { profileId: string; deviceId: string }; result: null };
   get_settings: { args: undefined; result: AppSettings };
   update_settings: { args: { settings: AppSettings }; result: AppSettings };
   get_update_status: { args: undefined; result: UpdateStatus };
@@ -62,6 +70,13 @@ export const api = {
   updateProfile: (id: string, draft: ProfileDraft) => call("update_profile", { id, draft }),
   deleteProfile: (id: string) => call("delete_profile", { id }),
   setDefaultProfile: (id: string) => call("set_default_profile", { id }),
+  activeProfile: () => call("get_active_profile"),
+  activateProfile: (id: string) => call("activate_profile", { id }),
+  profileDeviceSettings: (profileId: string) => call("list_profile_device_settings", { profileId }),
+  saveDeviceSettingsToProfile: (profileId: string, deviceId: string) =>
+    call("save_device_settings_to_profile", { profileId, deviceId }),
+  deleteProfileDeviceSettings: (profileId: string, deviceId: string) =>
+    call("delete_profile_device_settings", { profileId, deviceId }),
   getSettings: () => call("get_settings"),
   updateSettings: (settings: AppSettings) => call("update_settings", { settings }),
   updateStatus: () => call("get_update_status"),
