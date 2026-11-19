@@ -15,8 +15,10 @@ mod capability;
 mod driver;
 mod info;
 mod manager;
+mod settings;
 
 pub use capability::{Capability, CapabilityKind, SupportLevel};
 pub use driver::{DeviceDriver, DriverInfo, Platform};
 pub use info::{BatteryLevel, BatteryState, ChargingState, ConnectionType, DeviceInfo, DeviceKind};
 pub use manager::{DeviceManager, DeviceOverview};
+pub use settings::{DeviceSettings, DpiSetting, ReportRateSetting, SettingChange};

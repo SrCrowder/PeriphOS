@@ -44,6 +44,22 @@ impl DeviceManager {
         self.drivers.iter().map(|d| d.info()).collect()
     }
 
+    /// The driver that owns `device_id` (device IDs start with the driver ID).
+    pub fn driver_for(&self, device_id: &str) -> crate::CoreResult<&dyn DeviceDriver> {
+        self.drivers
+            .iter()
+            .find(|d| {
+                device_id
+                    .strip_prefix(d.info().id.as_str())
+                    .is_some_and(|rest| rest.starts_with(':'))
+            })
+            .map(|d| d.as_ref())
+            .ok_or_else(|| crate::CoreError::NotFound {
+                entity: "Device",
+                id: device_id.to_owned(),
+            })
+    }
+
     /// Ask every driver for its devices. A failing driver never prevents the
     /// others from reporting; its error is collected instead.
     pub fn scan(&self) -> DeviceOverview {
@@ -137,6 +153,23 @@ mod tests {
         assert_eq!(overview.devices.len(), 1);
         assert_eq!(overview.driver_errors.len(), 1);
         assert_eq!(overview.driver_errors[0].driver_id, "broken");
+    }
+
+    #[test]
+    fn devices_are_routed_to_their_driver() {
+        let mut manager = DeviceManager::new();
+        manager.register(stub("ok", false));
+        manager.register(stub("okay", false));
+        assert_eq!(manager.driver_for("okay:1").unwrap().info().id, "okay");
+        assert_eq!(manager.driver_for("ok:1").unwrap().info().id, "ok");
+        assert!(manager.driver_for("missing:1").is_err());
+        // Settings are unsupported unless the driver implements them.
+        let err = manager
+            .driver_for("ok:1")
+            .unwrap()
+            .read_settings("ok:1")
+            .unwrap_err();
+        assert_eq!(err.code(), "unsupported");
     }
 
     #[test]

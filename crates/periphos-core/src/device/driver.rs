@@ -1,7 +1,8 @@
 use serde::{Deserialize, Serialize};
 
 use super::info::DeviceInfo;
-use crate::CoreResult;
+use super::settings::{DeviceSettings, SettingChange};
+use crate::{CoreError, CoreResult};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -36,16 +37,35 @@ pub struct DriverInfo {
     pub platforms: Vec<Platform>,
 }
 
-/// A backend able to discover (and, later, configure) a family of devices.
+/// A backend able to discover and, where implemented, configure a family of
+/// devices.
 ///
 /// Implementations live outside this crate (one module or crate per
-/// backend). The trait is intentionally small for now; configuration
-/// methods will be added in Phase 4/5 as real drivers need them, instead of
-/// guessing an API up-front.
+/// backend). Methods are added as real drivers need them instead of guessing
+/// an API up-front; configuration methods default to "unsupported".
 pub trait DeviceDriver: Send + Sync {
     fn info(&self) -> DriverInfo;
 
     /// List the devices this driver currently sees. Must be side-effect free
     /// and must not change any device state.
     fn enumerate(&self) -> CoreResult<Vec<DeviceInfo>>;
+
+    /// Read the live settings of one of this driver's devices.
+    fn read_settings(&self, _device_id: &str) -> CoreResult<DeviceSettings> {
+        Err(CoreError::Unsupported(
+            "this device's settings cannot be read yet".into(),
+        ))
+    }
+
+    /// Apply a change and return the settings read back from the device, so
+    /// callers can tell whether the change really took effect.
+    fn apply_setting(
+        &self,
+        _device_id: &str,
+        _change: SettingChange,
+    ) -> CoreResult<DeviceSettings> {
+        Err(CoreError::Unsupported(
+            "this device's settings cannot be changed yet".into(),
+        ))
+    }
 }
