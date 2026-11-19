@@ -1,0 +1,33 @@
+use std::path::PathBuf;
+use std::sync::{Mutex, MutexGuard};
+
+use periphos_core::device::DeviceManager;
+use periphos_core::CoreError;
+use periphos_storage::Storage;
+
+/// Shared application state managed by Tauri.
+pub struct AppState {
+    storage: Mutex<Storage>,
+    pub devices: DeviceManager,
+    pub database_path: PathBuf,
+}
+
+impl AppState {
+    pub fn new(database_path: PathBuf) -> Result<Self, CoreError> {
+        let storage = Storage::open(&database_path)?;
+        // No device drivers ship in Phase 1. Drivers are registered here as
+        // they are implemented (see docs/ARCHITECTURE.md).
+        let devices = DeviceManager::new();
+        Ok(Self {
+            storage: Mutex::new(storage),
+            devices,
+            database_path,
+        })
+    }
+
+    pub fn storage(&self) -> Result<MutexGuard<'_, Storage>, CoreError> {
+        self.storage
+            .lock()
+            .map_err(|_| CoreError::Storage("database lock was poisoned".into()))
+    }
+}
