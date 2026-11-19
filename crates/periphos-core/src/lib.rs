@@ -12,6 +12,7 @@
 //! can be unit-tested in isolation and reused by a future background service
 //! or command-line tool.
 
+pub mod apps;
 pub mod device;
 pub mod error;
 pub mod profile;

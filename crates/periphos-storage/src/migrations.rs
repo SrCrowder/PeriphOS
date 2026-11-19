@@ -36,6 +36,18 @@ const MIGRATIONS: &[&str] = &[
         PRIMARY KEY (profile_id, device_id)
     );
     "#,
+    // v3: applications and games linked to profiles.
+    r#"
+    CREATE TABLE app_rules (
+        id           TEXT PRIMARY KEY NOT NULL,
+        profile_id   TEXT NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+        kind         TEXT NOT NULL CHECK (kind IN ('executable', 'package')),
+        value        TEXT NOT NULL COLLATE NOCASE,
+        display_name TEXT NOT NULL,
+        created_at   INTEGER NOT NULL,
+        UNIQUE (kind, value)
+    );
+    "#,
 ];
 
 pub(crate) fn run(conn: &mut Connection) -> CoreResult<()> {

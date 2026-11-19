@@ -8,6 +8,7 @@
 //! - Repositories (`profiles`, `settings`) expose domain types from
 //!   `periphos-core`, never raw rows.
 
+mod app_rules;
 mod device_settings;
 mod migrations;
 mod profiles;
