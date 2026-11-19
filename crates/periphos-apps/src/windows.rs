@@ -8,6 +8,9 @@ use windows::ApplicationModel::{Package, PackageSignatureKind};
 use windows::Management::Deployment::PackageManager;
 use windows::Win32::Foundation::{CloseHandle, ERROR_SUCCESS, HANDLE, HWND, LPARAM};
 use windows::Win32::Storage::Packaging::Appx::GetPackageFamilyName;
+use windows::Win32::System::Diagnostics::ToolHelp::{
+    CreateToolhelp32Snapshot, Process32FirstW, Process32NextW, PROCESSENTRY32W, TH32CS_SNAPPROCESS,
+};
 use windows::Win32::System::Threading::{
     GetCurrentProcessId, OpenProcess, QueryFullProcessImageNameW, PROCESS_NAME_WIN32,
     PROCESS_QUERY_LIMITED_INFORMATION,
@@ -196,4 +199,30 @@ pub fn installed_packages() -> Vec<InstalledPackage> {
         }
     }
     found
+}
+
+pub fn running_process_names() -> Vec<String> {
+    // SAFETY: the snapshot handle is wrapped so it is closed on every path.
+    let Ok(snapshot) = (unsafe { CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0) }) else {
+        return Vec::new();
+    };
+    let snapshot = Process(snapshot);
+    let mut entry = PROCESSENTRY32W {
+        dwSize: std::mem::size_of::<PROCESSENTRY32W>() as u32,
+        ..Default::default()
+    };
+    let mut names = Vec::new();
+    // SAFETY: `entry` is a properly sized PROCESSENTRY32W that outlives each call.
+    let mut ok = unsafe { Process32FirstW(snapshot.0, &mut entry) }.is_ok();
+    while ok {
+        let len = entry
+            .szExeFile
+            .iter()
+            .position(|&c| c == 0)
+            .unwrap_or(entry.szExeFile.len());
+        names.push(String::from_utf16_lossy(&entry.szExeFile[..len]));
+        // SAFETY: as above.
+        ok = unsafe { Process32NextW(snapshot.0, &mut entry) }.is_ok();
+    }
+    names
 }

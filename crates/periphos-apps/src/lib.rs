@@ -30,6 +30,16 @@ pub fn foreground_app() -> Option<AppIdentity> {
     platform::foreground_app()
 }
 
+/// Lower-case executable names of every running process (e.g. `lghub.exe` on
+/// Windows, `wootility` on Linux), to detect software that also controls a device.
+pub fn running_process_names() -> Vec<String> {
+    let mut names = platform::running_process_names();
+    names.iter_mut().for_each(|n| *n = n.to_lowercase());
+    names.sort();
+    names.dedup();
+    names
+}
+
 /// Microsoft Store / Game Pass packages installed for the current user, games
 /// first, then by name. Frameworks, resource packages and system apps are left out.
 pub fn installed_packages() -> Vec<InstalledPackage> {
