@@ -23,7 +23,9 @@ export function describeDevice(device: DeviceInfo): string {
   const kind = KIND_LABEL[device.kind].toLowerCase();
   return device.connection === "virtual"
     ? `${device.manufacturer}, virtual ${kind} created by software`
-    : device.connection === "internal"
+    : device.connectedVia
+      ? `${device.manufacturer}, ${kind} connected through a ${device.connectedVia}`
+      : device.connection === "internal"
       ? `${device.manufacturer}, built-in ${kind}`
       : `${device.manufacturer}, ${kind} over ${CONNECTION_LABEL[device.connection]}`;
 }

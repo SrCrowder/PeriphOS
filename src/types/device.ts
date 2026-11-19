@@ -27,6 +27,17 @@ export type DeviceKind = "mouse" | "keyboard" | "headset" | "controller" | "rece
 /** `virtual`: created by software (e.g. a manufacturer app), not hardware. */
 export type ConnectionType = "usb" | "bluetooth" | "receiver" | "virtual" | "internal" | "unknown";
 
+export type ChargingState = "discharging" | "charging" | "full" | "error";
+export type BatteryLevel = "full" | "good" | "low" | "critical" | "empty";
+
+export interface BatteryState {
+  percent: number | null;
+  level: BatteryLevel | null;
+  charging: ChargingState;
+  /** `percent` is estimated from the battery voltage. */
+  estimated: boolean;
+}
+
 export interface DeviceInfo {
   id: string;
   driverId: string;
@@ -41,6 +52,9 @@ export interface DeviceInfo {
   knownModel: boolean;
   interfaceCount: number;
   note: string | null;
+  battery: BatteryState | null;
+  /** Receiver the device is connected through. */
+  connectedVia: string | null;
 }
 
 export interface DriverInfo {

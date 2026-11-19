@@ -6,6 +6,7 @@ import { formatUsbId } from "@/lib/format";
 import { selectDevice, useDevices } from "@/stores/devices";
 import { useNavigation } from "@/stores/navigation";
 
+import { BatteryIndicator, batteryText } from "./BatteryIndicator";
 import { DeviceIllustration } from "./DeviceIllustration";
 import { describeCapability, describeDevice } from "./labels";
 import { SUPPORT_LEVELS } from "./supportLevels";
@@ -51,6 +52,27 @@ export function DeviceDetailPage() {
           <p className="mt-2 text-sm text-muted">{describeDevice(device)}</p>
           {device.note && <p className="mt-4 max-w-xl text-[13px] text-muted">{device.note}</p>}
         </div>
+        {device.battery && (
+          <div className="flex shrink-0 flex-col items-start gap-2 rounded-2xl bg-raised px-5 py-4 shadow-module">
+            <p className="text-xs font-semibold text-muted">Battery</p>
+            <p className="font-display text-[34px] leading-none tabular-nums">
+              {device.battery.percent !== null
+                ? `${device.battery.estimated ? "~" : ""}${device.battery.percent}%`
+                : batteryText(device.battery)}
+            </p>
+            <BatteryIndicator battery={device.battery} showText={false} />
+            <p className="max-w-44 text-xs text-muted">
+              {device.battery.charging === "charging"
+                ? "Charging."
+                : device.battery.charging === "full"
+                  ? "Fully charged."
+                  : device.battery.charging === "error"
+                    ? "The device reports a battery error."
+                    : "On battery."}
+              {device.battery.estimated && " Estimated from the battery voltage."}
+            </p>
+          </div>
+        )}
       </section>
 
       <div className="grid gap-4 lg:grid-cols-[1.6fr_1fr]">
@@ -69,7 +91,11 @@ export function DeviceDetailPage() {
             <ul className="divide-y divide-line border-t border-line">
               {device.capabilities.map((capability) => {
                 const { label, detail } = describeCapability(capability);
-                const level = SUPPORT_LEVELS[capability.support];
+                // Reading the battery is not a setting, so "on device" would mislead.
+                const level =
+                  capability.kind.type === "battery" && capability.support === "native"
+                    ? { label: "Supported", tone: "success" as const }
+                    : SUPPORT_LEVELS[capability.support];
                 return (
                   <li key={capability.kind.type} className="flex items-start gap-4 px-6 py-3.5">
                     <div className="min-w-0 flex-1">
@@ -92,14 +118,30 @@ export function DeviceDetailPage() {
 
         <Panel title="Identification">
           <dl className="grid grid-cols-[auto_1fr] gap-x-6 gap-y-2.5 text-[13px]">
-            <dt className="text-muted">USB ID</dt>
-            <dd className="font-semibold tabular-nums select-text">
-              {formatUsbId(device.vendorId)}:{formatUsbId(device.productId)}
-            </dd>
-            <dt className="text-muted">HID interfaces</dt>
-            <dd className="font-semibold tabular-nums">{device.interfaceCount}</dd>
+            {device.productId !== 0 && (
+              <>
+                <dt className="text-muted">{device.connectedVia ? "Wireless ID" : "USB ID"}</dt>
+                <dd className="font-semibold tabular-nums select-text">
+                  {formatUsbId(device.vendorId)}:{formatUsbId(device.productId)}
+                </dd>
+              </>
+            )}
+            {device.connectedVia && (
+              <>
+                <dt className="text-muted">Connected through</dt>
+                <dd className="font-semibold">{device.connectedVia}</dd>
+              </>
+            )}
+            {device.interfaceCount > 0 && (
+              <>
+                <dt className="text-muted">HID interfaces</dt>
+                <dd className="font-semibold tabular-nums">{device.interfaceCount}</dd>
+              </>
+            )}
             <dt className="text-muted">Model data</dt>
-            <dd className="font-semibold">{device.knownModel ? "PeriphOS database" : "Read from the device"}</dd>
+            <dd className="font-semibold">
+              {device.knownModel ? "PeriphOS database" : "Read from the device"}
+            </dd>
             <dt className="text-muted">Detected by</dt>
             <dd className="font-semibold">{device.driverId}</dd>
           </dl>

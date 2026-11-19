@@ -5,6 +5,7 @@ import { formatUsbId } from "@/lib/format";
 import { useNavigation } from "@/stores/navigation";
 import type { DeviceInfo } from "@/types/device";
 
+import { BatteryIndicator } from "./BatteryIndicator";
 import { DeviceIllustration } from "./DeviceIllustration";
 import { CONNECTION_LABEL, KIND_LABEL } from "./labels";
 
@@ -29,14 +30,21 @@ export function DeviceList({ devices }: { devices: DeviceInfo[] }) {
               <p className="truncate text-[13px] text-muted">
                 {device.connection === "virtual"
                   ? `Virtual ${KIND_LABEL[device.kind].toLowerCase()}`
-                  : `${KIND_LABEL[device.kind]}, ${CONNECTION_LABEL[device.connection]}`}
-                <span className="text-subtle tabular-nums">
-                  {" "}
-                  · {formatUsbId(device.vendorId)}:{formatUsbId(device.productId)}
-                </span>
+                  : device.connectedVia
+                    ? `${KIND_LABEL[device.kind]}, through ${device.connectedVia}`
+                    : `${KIND_LABEL[device.kind]}, ${CONNECTION_LABEL[device.connection]}`}
+                {device.productId !== 0 && (
+                  <span className="text-subtle tabular-nums">
+                    {" "}
+                    · {formatUsbId(device.vendorId)}:{formatUsbId(device.productId)}
+                  </span>
+                )}
               </p>
             </div>
-            {device.knownModel ? (
+            {device.battery && <BatteryIndicator battery={device.battery} />}
+            {device.driverId !== "hid-generic" ? (
+              <Badge tone="success">Identified</Badge>
+            ) : device.knownModel ? (
               <Badge tone="success">Known model</Badge>
             ) : (
               <Badge>Generic</Badge>

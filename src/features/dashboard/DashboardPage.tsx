@@ -8,6 +8,7 @@ import { useDevices } from "@/stores/devices";
 import { useNavigation } from "@/stores/navigation";
 import { selectDefaultProfile, useProfiles } from "@/stores/profiles";
 
+import { BatteryIndicator } from "@/features/devices/BatteryIndicator";
 import { isPhysical } from "@/features/devices/labels";
 
 import { ProfileDial } from "./ProfileDial";
@@ -70,7 +71,10 @@ export function DashboardPage() {
                   className="flex h-16 w-full flex-col justify-center rounded-2xl bg-raised px-3 text-left shadow-module transition-colors hover:bg-hover"
                 >
                   <span className="truncate text-[13px] font-semibold">{device.name}</span>
-                  <span className="truncate text-xs text-muted">{device.manufacturer}</span>
+                  <span className="flex items-center justify-between gap-2 text-xs text-muted">
+                    <span className="truncate">{device.manufacturer}</span>
+                    {device.battery && <BatteryIndicator battery={device.battery} />}
+                  </span>
                 </button>
               </li>
             ) : (
