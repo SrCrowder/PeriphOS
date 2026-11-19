@@ -1,0 +1,104 @@
+name: Development build
+
+# Builds every change on main and publishes it to the rolling "nightly"
+# prerelease. Installed apps on the Development update channel pick it up.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: dev-build
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+
+jobs:
+  # Skips the build (with a warning) until the updater key is configured,
+  # instead of failing every push. See docs/RELEASING.md.
+  signing:
+    runs-on: ubuntu-latest
+    outputs:
+      ready: ${{ steps.check.outputs.ready }}
+    steps:
+      - uses: actions/checkout@v5
+      - id: check
+        env:
+          HAS_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY != '' }}
+        run: |
+          PUBKEY=$(node -p 'require("./src-tauri/tauri.conf.json").plugins.updater.pubkey')
+          if [ "$HAS_KEY" = "true" ] && [ -n "$PUBKEY" ]; then
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "::warning::Updater signing is not configured (secret or pubkey missing). Skipping the development build. See docs/RELEASING.md."
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+          fi
+
+  windows:
+    needs: signing
+    if: needs.signing.outputs.ready == 'true'
+    runs-on: windows-latest
+    env:
+      PERIPHOS_UPDATE_CHANNEL: development
+      TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+      TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+      GH_TOKEN: ${{ github.token }}
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v5
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Set development version
+        id: version
+        run: |
+          BASE=$(node -p 'require("./src-tauri/tauri.conf.json").version')
+          VERSION="$BASE-dev.$GITHUB_RUN_NUMBER"
+          node -e '
+            const fs = require("fs");
+            const path = "src-tauri/tauri.conf.json";
+            const conf = JSON.parse(fs.readFileSync(path, "utf8"));
+            conf.version = process.argv[1];
+            fs.writeFileSync(path, JSON.stringify(conf, null, 2));
+          ' "$VERSION"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+      - name: Build signed installer
+        run: npx tauri build --bundles nsis --config '{"bundle":{"createUpdaterArtifacts":true}}'
+      - name: Publish to the nightly prerelease
+        run: |
+          VERSION='${{ steps.version.outputs.version }}'
+          EXE=$(ls target/release/bundle/nsis/*-setup.exe)
+          NOTES="Development build $VERSION from commit ${GITHUB_SHA::7}: $(git log -1 --format=%s)"
+          node scripts/updater-manifest.mjs --version "$VERSION" \
+            --base-url "https://github.com/$GITHUB_REPOSITORY/releases/download/nightly" \
+            --nsis "$EXE" --notes "$NOTES"
+
+          if ! gh release view nightly >/dev/null 2>&1; then
+            gh release create nightly --prerelease --target "$GITHUB_SHA" \
+              --title "Development build" --notes "Rolling build of the main branch. For testing only."
+          fi
+          git tag -f nightly "$GITHUB_SHA"
+          git push -f origin refs/tags/nightly
+
+          # Upload the installer before the manifest so the manifest never points at a missing file.
+          gh release upload nightly "$EXE" "$EXE.sig" --clobber
+          gh release upload nightly latest.json --clobber
+          gh release edit nightly --prerelease --notes "$NOTES
+
+          Unsigned for Windows SmartScreen: choose More info, then Run anyway."
+
+          # Remove installers from previous builds.
+          KEEP="$(basename "$EXE")"
+          gh release view nightly --json assets --jq '.assets[].name' | while read -r name; do
+            case "$name" in
+              latest.json|"$KEEP"|"$KEEP.sig") ;;
+              *) gh release delete-asset nightly "$name" --yes ;;
+            esac
+          done

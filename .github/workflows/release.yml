@@ -1,0 +1,53 @@
+name: Release
+
+# Publishes a stable release when a version tag (v1.2.3) is pushed.
+# Installed apps on the Stable update channel pick it up.
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    env:
+      PERIPHOS_UPDATE_CHANNEL: stable
+      TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+      TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+      GH_TOKEN: ${{ github.token }}
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v5
+      - name: Check tag matches the app version
+        run: |
+          VERSION=$(node -p 'require("./src-tauri/tauri.conf.json").version')
+          if [ "v$VERSION" != "$GITHUB_REF_NAME" ]; then
+            echo "::error::Tag $GITHUB_REF_NAME does not match version $VERSION in src-tauri/tauri.conf.json"
+            exit 1
+          fi
+          if [ -z "$TAURI_SIGNING_PRIVATE_KEY" ]; then
+            echo "::error::The TAURI_SIGNING_PRIVATE_KEY secret is not set. See docs/RELEASING.md."
+            exit 1
+          fi
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Build signed installers
+        run: npx tauri build --bundles nsis,msi --config '{"bundle":{"createUpdaterArtifacts":true}}'
+      - name: Create release
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          EXE=$(ls target/release/bundle/nsis/*-setup.exe)
+          MSI=$(ls target/release/bundle/msi/*.msi)
+          node scripts/updater-manifest.mjs --version "$VERSION" \
+            --base-url "https://github.com/$GITHUB_REPOSITORY/releases/download/$GITHUB_REF_NAME" \
+            --nsis "$EXE" --msi "$MSI" --notes "See the release notes on GitHub."
+          gh release create "$GITHUB_REF_NAME" --title "PeriphOS $VERSION" --generate-notes \
+            "$EXE" "$EXE.sig" "$MSI" "$MSI.sig" latest.json
