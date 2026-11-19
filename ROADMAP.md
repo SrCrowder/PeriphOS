@@ -51,8 +51,9 @@ what exists today. Legend: ✅ implemented, 🟡 partially implemented, ⏳ plan
 
 ## Phase 3: Profiles and game detection 🟡
 
-- ✅ Save a device's current DPI and report rate in a profile
-- ✅ Activate a profile manually; its device settings are applied to connected devices
+- ✅ Device changes are saved straight into the active profile
+- ✅ Pick the active profile from the sidebar; activating one by hand applies its settings to
+  connected devices
 - ✅ When a device connects (or comes back after being switched off and losing its settings),
   the active profile's settings are applied to it
 
@@ -64,7 +65,9 @@ what exists today. Legend: ✅ implemented, 🟡 partially implemented, ⏳ plan
 - ⏳ Pick installed Microsoft Store / Game Pass games that are not running
 - ⏳ Automatic switching on Linux (X11 first; Wayland needs desktop-specific support)
 - ⏳ Profiles shared by several devices
-- ⏳ Launch at startup and minimize to tray
+- ✅ Keep running in the system tray when the window is closed (single instance)
+- ⏳ Launch at startup
+- ⏳ Show the active profile in the tray (optional)
 
 ## Phase 4: Input remapping and macros ⏳
 
@@ -79,6 +82,8 @@ what exists today. Legend: ✅ implemented, 🟡 partially implemented, ⏳ plan
   Logitech HID++ (documented by the Solaar and libratbag projects) and Wooting (open SDKs)
 - 🟡 **Wireless battery monitor**: battery level is shown for Logitech wireless devices;
   low-battery notifications, a tray indicator and other manufacturers are planned
+- ⏳ **Taskbar readout**: a compact, always-visible text next to the tray (for example battery
+  levels and the active profile), in the spirit of TraySense
 - ⏳ Profile import/export and full backup/restore
 - ⏳ Appearance selector: interface styles (Graphite, Stage, Mono) and logo marks besides the default Tactile style and Dial logo
 - ⏳ Community driver/extension model
