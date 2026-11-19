@@ -41,7 +41,7 @@ impl Storage {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use periphos_core::settings::{Accent, Theme};
+    use periphos_core::settings::{Accent, Theme, UpdateChannel};
 
     #[test]
     fn defaults_when_empty_and_roundtrip() {
@@ -52,6 +52,8 @@ mod tests {
             theme: Theme::Light,
             accent: Accent::Cyan,
             reduce_motion: true,
+            update_channel: Some(UpdateChannel::Development),
+            auto_check_updates: false,
         };
         s.save_settings(&custom).unwrap();
         assert_eq!(s.load_settings().unwrap(), custom);

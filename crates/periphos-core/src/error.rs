@@ -23,6 +23,9 @@ pub enum CoreError {
 
     #[error("device error: {0}")]
     Device(String),
+
+    #[error("{0}")]
+    Update(String),
 }
 
 impl CoreError {
@@ -35,6 +38,7 @@ impl CoreError {
             CoreError::Unsupported(_) => "unsupported",
             CoreError::Storage(_) => "storage",
             CoreError::Device(_) => "device",
+            CoreError::Update(_) => "update",
         }
     }
 }
