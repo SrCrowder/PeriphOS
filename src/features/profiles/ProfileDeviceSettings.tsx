@@ -44,7 +44,7 @@ export function ProfileDeviceSettings({ profileId }: { profileId: string }) {
   if (entries.length === 0) {
     return (
       <p className="text-[13px] text-muted">
-        No device settings saved yet. Open a device, adjust it, and choose “Save to profile”.
+        No device settings yet. Select this profile in the sidebar, open a device and apply a change.
       </p>
     );
   }

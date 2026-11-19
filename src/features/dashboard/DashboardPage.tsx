@@ -1,6 +1,6 @@
 import { ArrowUpRight } from "lucide-react";
 
-import { Led } from "@/components/layout/Sidebar";
+import { Led } from "@/components/layout/Led";
 import { Badge, Button, Panel } from "@/components/ui";
 import { formatRelative, PLATFORM_LABEL } from "@/lib/format";
 import { useAppInfo } from "@/stores/appInfo";

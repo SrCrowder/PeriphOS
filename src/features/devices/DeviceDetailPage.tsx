@@ -1,6 +1,6 @@
 import { ArrowLeft, Unplug } from "lucide-react";
 
-import { Led } from "@/components/layout/Sidebar";
+import { Led } from "@/components/layout/Led";
 import { Badge, Button, EmptyState, Panel } from "@/components/ui";
 import { formatUsbId } from "@/lib/format";
 import { selectDevice, useDevices } from "@/stores/devices";

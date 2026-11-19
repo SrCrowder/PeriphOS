@@ -1,7 +1,7 @@
 import { ChevronDown, Pencil, Play, Star, Trash2 } from "lucide-react";
 import { useState } from "react";
 
-import { Led } from "@/components/layout/Sidebar";
+import { Led } from "@/components/layout/Led";
 import { Badge, Button } from "@/components/ui";
 import { cn } from "@/lib/cn";
 import { formatDateTime, formatRelative } from "@/lib/format";

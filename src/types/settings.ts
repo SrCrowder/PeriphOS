@@ -14,6 +14,8 @@ export interface AppSettings {
   /** `null` = the channel this build was published on. */
   updateChannel: UpdateChannel | null;
   autoCheckUpdates: boolean;
+  /** Keep running in the system tray when the window is closed. */
+  minimizeToTray: boolean;
 }
 
 export const DEFAULT_SETTINGS: AppSettings = {
@@ -22,4 +24,5 @@ export const DEFAULT_SETTINGS: AppSettings = {
   reduceMotion: false,
   updateChannel: null,
   autoCheckUpdates: true,
+  minimizeToTray: true,
 };

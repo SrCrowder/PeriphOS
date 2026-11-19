@@ -2,27 +2,15 @@ import { NAV_ITEMS } from "@/app/navigation";
 import { cn } from "@/lib/cn";
 import { useAppInfo } from "@/stores/appInfo";
 import { useNavigation } from "@/stores/navigation";
-import { selectActiveProfile, useProfiles } from "@/stores/profiles";
 import { useUpdates } from "@/stores/updates";
 
+import { Led } from "./Led";
 import { Logo } from "./Logo";
-
-/** Small status light, the recurring "hardware" detail of the interface. */
-export function Led({ on, className }: { on: boolean; className?: string }) {
-  return (
-    <span
-      aria-hidden
-      className={cn("size-1.5 shrink-0 rounded-full", on ? "bg-current" : "bg-led-off", className)}
-    />
-  );
-}
+import { ProfileSwitcher } from "./ProfileSwitcher";
 
 export function Sidebar() {
   const page = useNavigation((s) => s.page);
   const navigate = useNavigation((s) => s.navigate);
-  const activeProfile = useProfiles(selectActiveProfile);
-  const mode = useProfiles((s) => s.mode);
-  const matchedApp = useProfiles((s) => s.matchedApp);
   const version = useAppInfo((s) => s.info?.version);
   const availableVersion = useUpdates((s) => (s.phase === "available" ? s.result?.version : null));
 
@@ -74,19 +62,7 @@ export function Sidebar() {
         </button>
       )}
 
-      <button
-        type="button"
-        onClick={() => navigate("profiles")}
-        className="mt-3 rounded-2xl bg-raised p-3 text-left shadow-module transition-colors hover:bg-hover"
-      >
-        <span className="flex items-center gap-2 text-xs text-subtle">
-          <Led on className="text-accent" /> Active profile
-        </span>
-        <span className="mt-1 block truncate text-sm font-bold">{activeProfile?.name ?? "Loading…"}</span>
-        <span className="mt-0.5 block truncate text-[11.5px] text-subtle">
-          {mode === "manual" ? "Chosen manually" : matchedApp ? `For ${matchedApp}` : "Automatic"}
-        </span>
-      </button>
+      <ProfileSwitcher />
       <p className="px-3 pt-3 pb-1 text-[11.5px] text-subtle">
         {version ? `Version ${version}` : " "}
       </p>

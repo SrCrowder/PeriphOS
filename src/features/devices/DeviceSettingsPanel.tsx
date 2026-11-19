@@ -5,9 +5,8 @@ import { Button, Panel, SegmentedControl, Spinner } from "@/components/ui";
 import { api } from "@/lib/ipc";
 import { toIpcError } from "@/lib/errors";
 import { toast } from "@/stores/toasts";
+import { selectActiveProfile, useProfiles } from "@/stores/profiles";
 import type { DeviceInfo, DeviceSettings, SettingChange } from "@/types/device";
-
-import { SaveToProfile } from "./SaveToProfile";
 
 const number = new Intl.NumberFormat("en");
 
@@ -37,6 +36,7 @@ function describe(change: SettingChange): string {
  * read settings. Every change is read back to confirm it took effect.
  */
 export function DeviceSettingsPanel({ device }: { device: DeviceInfo }) {
+  const activeProfile = useProfiles(selectActiveProfile);
   const [state, setState] = useState<State>({ status: "loading" });
   const [dpiIndex, setDpiIndex] = useState(0);
   const [busy, setBusy] = useState(false);
@@ -65,7 +65,19 @@ export function DeviceSettingsPanel({ device }: { device: DeviceInfo }) {
       const dpi = result.settings.dpi;
       if (dpi) setDpiIndex(nearestIndex(dpi.values, dpi.current));
       if (result.tookEffect) {
-        toast.success(`${change.type === "dpi" ? "Sensitivity" : "Report rate"} set to ${describe(change)}.`);
+        // Changes belong to the active profile: store the device's settings there.
+        const profile = selectActiveProfile(useProfiles.getState());
+        const what = `${change.type === "dpi" ? "Sensitivity" : "Report rate"} set to ${describe(change)}`;
+        if (profile) {
+          try {
+            await api.saveDeviceSettingsToProfile(profile.id, device.id);
+            toast.success(`${what} and saved to "${profile.name}".`);
+          } catch (e) {
+            toast.error(`${what}, but it could not be saved to "${profile.name}": ${toIpcError(e).message}`);
+          }
+        } else {
+          toast.success(`${what}.`);
+        }
       } else {
         toast.error(
           `${device.name} accepted the change but still reports a different value. A profile stored in the device may be in control.`,
@@ -83,7 +95,13 @@ export function DeviceSettingsPanel({ device }: { device: DeviceInfo }) {
   return (
     <Panel
       title="Settings"
-      description="Read from the device just now. Changes apply right away; save them to a profile to keep them."
+      description={
+        <>
+          Read from the device just now. Changes apply right away and are saved to the active
+          profile, <span className="font-semibold text-fg">{activeProfile?.name ?? "…"}</span>.
+          Pick another profile from the sidebar to edit that one.
+        </>
+      }
       actions={
         <Button
           size="sm"
@@ -155,10 +173,8 @@ export function DeviceSettingsPanel({ device }: { device: DeviceInfo }) {
             </div>
           )}
 
-          {!state.settings.dpi && !state.settings.reportRate ? (
+          {!state.settings.dpi && !state.settings.reportRate && (
             <p className="text-[13px] text-muted">This device has no settings PeriphOS can change yet.</p>
-          ) : (
-            <SaveToProfile deviceId={device.id} deviceName={device.name} />
           )}
         </div>
       )}

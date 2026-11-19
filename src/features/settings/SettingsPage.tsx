@@ -78,10 +78,15 @@ export function SettingsPage() {
             control={<PlannedSwitch label="Launch at startup" />}
           />
           <SettingRow
-            disabled
-            title={<>Minimize to tray <PlannedTag /></>}
-            description="Keep PeriphOS running in the system tray when the window is closed."
-            control={<PlannedSwitch label="Minimize to tray" />}
+            title="Keep running in the system tray"
+            description="Closing the window keeps PeriphOS in the tray so profiles keep switching. Quit from the tray icon's menu."
+            control={
+              <Switch
+                label="Keep running in the system tray"
+                checked={settings.minimizeToTray}
+                onChange={(minimizeToTray) => void update({ minimizeToTray })}
+              />
+            }
           />
         </Panel>
 
