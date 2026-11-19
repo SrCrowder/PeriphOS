@@ -23,6 +23,8 @@ pub enum ConnectionType {
     Receiver,
     /// Created by software (e.g. a manufacturer app's driver), not hardware.
     Virtual,
+    /// Built into the computer (I2C/SPI, e.g. laptop keyboards and touchpads).
+    Internal,
     Unknown,
 }
 

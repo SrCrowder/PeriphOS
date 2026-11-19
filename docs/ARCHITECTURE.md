@@ -94,6 +94,11 @@ permissions on either platform.
   such as RGB controllers are skipped.
 - The main type comes from the lowest-numbered input interface (mice often add a keyboard
   interface for macros).
+- Devices on a bus `hidapi` does not recognise (not USB, Bluetooth, I2C or SPI) are treated as
+  virtual: manufacturer apps create them (Logitech G HUB's virtual keyboard, Corsair iCUE's
+  virtual input device). They may reuse a real model's ID, so on an unknown bus a catalogued
+  model name is not trusted unless the database marks the entry as virtual. The UI hides
+  virtual devices by default.
 - `devices.json` maps USB IDs to model names and capabilities. Every entry cites its sources.
   `productIdMask` handles devices whose product ID changes with a mode (Wooting keyboards
   change the last hex digit with the controller emulation mode).

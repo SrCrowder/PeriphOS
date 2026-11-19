@@ -24,7 +24,11 @@ const USAGE_KEYBOARD: u16 = 0x06;
 pub enum Bus {
     Usb,
     Bluetooth,
-    Other,
+    /// I2C or SPI: devices built into the computer.
+    Internal,
+    /// Not a hardware bus `hidapi` recognises. In practice these are virtual
+    /// devices created by software (e.g. Logitech G HUB or Corsair iCUE drivers).
+    Unknown,
 }
 
 /// One HID interface (top-level collection) as enumerated by the OS.
@@ -79,7 +83,13 @@ pub fn classify(interfaces: &[HidInterface], db: &Database) -> Vec<DeviceInfo> {
     groups
         .into_iter()
         .filter_map(|((vendor_id, product_id, serial), members)| {
-            let known = db.lookup(vendor_id, product_id);
+            let first = members[0];
+            let on_unknown_bus = first.bus == Bus::Unknown;
+            let catalogued = db.lookup(vendor_id, product_id);
+            // A device on an unknown bus is software-made. If it borrows the ID of a real
+            // model, do not present it as that model.
+            let known = catalogued.filter(|k| k.is_virtual || !on_unknown_bus);
+            let borrowed_id = catalogued.is_some() && known.is_none();
             // The lowest-numbered input interface is the device's main function.
             let detected_kind = members
                 .iter()
@@ -90,26 +100,40 @@ pub fn classify(interfaces: &[HidInterface], db: &Database) -> Vec<DeviceInfo> {
                 return None;
             }
 
-            let first = members[0];
-            let manufacturer = db
-                .vendor_name(vendor_id)
-                .map(str::to_owned)
+            let vendor = db.vendor_name(vendor_id).map(str::to_owned);
+            let manufacturer = vendor
+                .clone()
                 .or_else(|| members.iter().find_map(|i| clean(&i.manufacturer)))
                 .unwrap_or_else(|| "Unknown manufacturer".into());
             let name = known
                 .map(|k| k.name.clone())
                 .or_else(|| members.iter().find_map(|i| clean(&i.product)))
-                .unwrap_or_else(|| "Unknown device".into());
-            let kind = known
-                .map(|k| k.kind)
-                .or(detected_kind)
-                .unwrap_or(DeviceKind::Other);
+                .unwrap_or_else(|| {
+                    if on_unknown_bus { "Virtual device" } else { "Unknown device" }.into()
+                });
+            let kind = known.map(|k| k.kind).or(detected_kind).unwrap_or(DeviceKind::Other);
             let connection = match first.bus {
                 _ if known.is_some_and(|k| k.is_virtual) => ConnectionType::Virtual,
+                Bus::Unknown => ConnectionType::Virtual,
                 Bus::Bluetooth => ConnectionType::Bluetooth,
+                Bus::Internal => ConnectionType::Internal,
                 _ if kind == DeviceKind::Receiver => ConnectionType::Receiver,
                 Bus::Usb => ConnectionType::Usb,
-                Bus::Other => ConnectionType::Unknown,
+            };
+            let note = match (known, catalogued) {
+                (Some(k), _) => k.note.clone(),
+                (None, Some(model)) if borrowed_id => Some(format!(
+                    "Not connected through USB or Bluetooth, so it is most likely a virtual device \
+                     created by software. It uses the same ID as the {} {}, but it is not that device.",
+                    vendor.as_deref().unwrap_or("manufacturer's"),
+                    model.name
+                )),
+                _ if on_unknown_bus => Some(
+                    "Not connected through USB or Bluetooth, so it is most likely a virtual device \
+                     created by software."
+                        .into(),
+                ),
+                _ => None,
             };
             let serial_part = if serial.is_empty() {
                 "0".to_owned()
@@ -129,7 +153,7 @@ pub fn classify(interfaces: &[HidInterface], db: &Database) -> Vec<DeviceInfo> {
                 capabilities: known.map(|k| k.capabilities.clone()).unwrap_or_default(),
                 known_model: known.is_some(),
                 interface_count: members.len().min(u16::MAX as usize) as u16,
-                note: known.and_then(|k| k.note.clone()),
+                note,
             })
         })
         .collect()
@@ -220,10 +244,43 @@ mod tests {
     #[test]
     fn software_devices_are_marked_virtual() {
         let mut ghub = iface(0x046d, 0xc232, 0x01, USAGE_KEYBOARD, -1);
-        ghub.bus = Bus::Other;
+        ghub.bus = Bus::Unknown;
         assert_eq!(
             classify(&[ghub], bundled())[0].connection,
             ConnectionType::Virtual
+        );
+    }
+
+    #[test]
+    fn unknown_bus_device_does_not_borrow_a_real_model_name() {
+        // Seen on Windows with Corsair iCUE installed: a virtual device using the
+        // Corsair M75's ID on Corsair's virtual bus.
+        let mut i = iface(0x1b1c, 0x1bf0, 0x01, USAGE_MOUSE, 0);
+        i.bus = Bus::Unknown;
+        i.product = None;
+        let d = &classify(&[i], bundled())[0];
+        assert_eq!(d.connection, ConnectionType::Virtual);
+        assert_eq!(d.manufacturer, "Corsair");
+        assert_eq!(d.name, "Virtual device");
+        assert!(!d.known_model);
+        assert!(d.capabilities.is_empty());
+        assert!(d.note.as_deref().unwrap().contains("M75 Gaming Mouse"));
+    }
+
+    #[test]
+    fn real_model_on_usb_keeps_its_name() {
+        let d = &classify(&[iface(0x1b1c, 0x1bf0, 0x01, USAGE_MOUSE, 0)], bundled())[0];
+        assert_eq!(d.name, "M75 Gaming Mouse");
+        assert_eq!(d.connection, ConnectionType::Usb);
+    }
+
+    #[test]
+    fn built_in_devices_are_not_virtual() {
+        let mut i = iface(0x1234, 0x0001, 0x01, USAGE_KEYBOARD, 0);
+        i.bus = Bus::Internal;
+        assert_eq!(
+            classify(&[i], bundled())[0].connection,
+            ConnectionType::Internal
         );
     }
 

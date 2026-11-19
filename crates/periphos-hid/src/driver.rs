@@ -46,7 +46,8 @@ impl HidDriver {
                 bus: match d.bus_type() {
                     BusType::Usb => Bus::Usb,
                     BusType::Bluetooth => Bus::Bluetooth,
-                    _ => Bus::Other,
+                    BusType::I2c | BusType::Spi => Bus::Internal,
+                    BusType::Unknown => Bus::Unknown,
                 },
             })
             .collect())
