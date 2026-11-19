@@ -6,6 +6,7 @@
 
 mod app_watcher;
 mod commands;
+mod conflicts;
 mod device_watcher;
 mod error;
 mod profile_runtime;

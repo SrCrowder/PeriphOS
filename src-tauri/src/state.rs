@@ -38,7 +38,11 @@ impl AppState {
         let storage = Storage::open(&database_path)?;
         // Every device backend is registered here (see docs/ARCHITECTURE.md).
         let mut devices = DeviceManager::new();
-        devices.register(Box::new(periphos_hid::HidDriver::new()));
+        // Vendors with a dedicated driver are left out of the generic one.
+        devices.register(Box::new(
+            periphos_hid::HidDriver::new().excluding_vendors(&[periphos_wooting::WOOTING_VID]),
+        ));
+        devices.register(Box::new(periphos_wooting::WootingDriver::new()));
         devices.register(Box::new(periphos_logitech::LogitechDriver::new()));
         Ok(Self {
             storage: Mutex::new(storage),

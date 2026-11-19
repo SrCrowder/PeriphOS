@@ -3,6 +3,7 @@ use periphos_core::CoreError;
 use serde::Serialize;
 use tauri::{AppHandle, Manager, State};
 
+use crate::conflicts;
 use crate::error::IpcResult;
 use crate::state::AppState;
 
@@ -27,10 +28,13 @@ pub async fn blocking<T: Send + 'static>(
 #[tauri::command]
 pub async fn get_device_settings(app: AppHandle, device_id: String) -> IpcResult<DeviceSettings> {
     blocking(app, move |state| {
-        state
+        let mut settings = state
             .devices
             .driver_for(&device_id)?
-            .read_settings(&device_id)
+            .read_settings(&device_id)?;
+        settings.conflicting_software =
+            conflicts::running_for_driver(conflicts::driver_of(&device_id));
+        Ok(settings)
     })
     .await
 }
@@ -51,10 +55,12 @@ pub async fn apply_device_setting(
     change: SettingChange,
 ) -> IpcResult<SettingResult> {
     blocking(app, move |state| {
-        let settings = state
+        let mut settings = state
             .devices
             .driver_for(&device_id)?
             .apply_setting(&device_id, change)?;
+        settings.conflicting_software =
+            conflicts::running_for_driver(conflicts::driver_of(&device_id));
         Ok(SettingResult {
             took_effect: change.took_effect(&settings),
             settings,

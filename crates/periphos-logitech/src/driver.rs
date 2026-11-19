@@ -200,6 +200,11 @@ impl DeviceDriver for LogitechDriver {
                     }
                     settings::set_report_rate(s, slot, hz)?;
                 }
+                SettingChange::OnboardProfile(_) => {
+                    return Err(session::Error::Io(
+                        "Switching onboard profiles is not supported for this device yet.".into(),
+                    ));
+                }
             }
             settings::read_all(s, slot)
         })

@@ -198,6 +198,7 @@ pub fn read_all<T: Transport>(s: &mut Session<T>, dev: u8) -> Result<DeviceSetti
         dpi: read_dpi(s, dev)?,
         report_rate: read_report_rate(s, dev)?,
         onboard_profile_active: onboard_profile_active(s, dev).unwrap_or(None),
+        ..Default::default()
     })
 }
 

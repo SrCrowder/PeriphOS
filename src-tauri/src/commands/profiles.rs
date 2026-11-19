@@ -176,6 +176,7 @@ pub async fn save_device_settings_to_profile(
             device_name: device.name,
             dpi: live.dpi.map(|d| d.current),
             report_rate_hz: live.report_rate.map(|r| r.current_hz),
+            onboard_profile: live.onboard_profile.map(|p| p.current),
             updated_at: 0,
         };
         state

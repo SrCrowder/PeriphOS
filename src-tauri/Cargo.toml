@@ -20,6 +20,7 @@ periphos-storage.workspace = true
 periphos-hid.workspace = true
 periphos-logitech.workspace = true
 periphos-apps.workspace = true
+periphos-wooting.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 tauri = { version = "2", features = ["tray-icon"] }
