@@ -10,6 +10,7 @@ import type { AppInfo } from "@/types/app";
 import type { DeviceOverview } from "@/types/device";
 import type { Profile, ProfileDraft } from "@/types/profile";
 import type { AppSettings } from "@/types/settings";
+import type { UpdateCheck, UpdateStatus } from "@/types/updates";
 
 import { toIpcError } from "./errors";
 
@@ -23,6 +24,9 @@ export interface Commands {
   set_default_profile: { args: { id: string }; result: Profile };
   get_settings: { args: undefined; result: AppSettings };
   update_settings: { args: { settings: AppSettings }; result: AppSettings };
+  get_update_status: { args: undefined; result: UpdateStatus };
+  check_for_update: { args: undefined; result: UpdateCheck };
+  install_update: { args: undefined; result: null };
 }
 
 export type CommandName = keyof Commands;
@@ -55,4 +59,7 @@ export const api = {
   setDefaultProfile: (id: string) => call("set_default_profile", { id }),
   getSettings: () => call("get_settings"),
   updateSettings: (settings: AppSettings) => call("update_settings", { settings }),
+  updateStatus: () => call("get_update_status"),
+  checkForUpdate: () => call("check_for_update"),
+  installUpdate: () => call("install_update"),
 };

@@ -3,6 +3,7 @@ import { cn } from "@/lib/cn";
 import { useAppInfo } from "@/stores/appInfo";
 import { useNavigation } from "@/stores/navigation";
 import { selectDefaultProfile, useProfiles } from "@/stores/profiles";
+import { useUpdates } from "@/stores/updates";
 
 import { Logo } from "./Logo";
 
@@ -21,6 +22,7 @@ export function Sidebar() {
   const navigate = useNavigation((s) => s.navigate);
   const activeProfile = useProfiles(selectDefaultProfile);
   const version = useAppInfo((s) => s.info?.version);
+  const availableVersion = useUpdates((s) => (s.phase === "available" ? s.result?.version : null));
 
   return (
     <aside className="flex w-56 shrink-0 flex-col rounded-module bg-sidebar p-3 shadow-module">
@@ -58,6 +60,17 @@ export function Sidebar() {
           );
         })}
       </nav>
+
+      {availableVersion && (
+        <button
+          type="button"
+          onClick={() => navigate("settings")}
+          className="mt-3 flex items-center gap-2 rounded-2xl border-2 border-accent px-3 py-2.5 text-left text-[13px] font-semibold text-accent transition-colors hover:bg-accent hover:text-accent-fg"
+        >
+          <Led on className="animate-pulse" />
+          Update {availableVersion} available
+        </button>
+      )}
 
       <button
         type="button"

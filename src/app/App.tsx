@@ -11,6 +11,7 @@ import { useAppInfo } from "@/stores/appInfo";
 import { useNavigation, type PageId } from "@/stores/navigation";
 import { useProfiles } from "@/stores/profiles";
 import { useSettings } from "@/stores/settings";
+import { useUpdates } from "@/stores/updates";
 
 import { useThemeSync } from "./useThemeSync";
 
@@ -28,9 +29,16 @@ export function App() {
   useThemeSync();
 
   useEffect(() => {
-    void useSettings.getState().load();
     void useProfiles.getState().load();
     void useAppInfo.getState().load();
+    void (async () => {
+      await useSettings.getState().load();
+      await useUpdates.getState().loadStatus();
+      const { status } = useUpdates.getState();
+      if (status?.configured && useSettings.getState().settings.autoCheckUpdates) {
+        await useUpdates.getState().check({ silent: true });
+      }
+    })();
   }, []);
 
   const Page = PAGES[page];

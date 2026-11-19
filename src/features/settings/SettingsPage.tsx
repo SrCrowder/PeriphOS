@@ -9,6 +9,7 @@ import { toast } from "@/stores/toasts";
 import type { Theme } from "@/types/settings";
 
 import { AccentPicker } from "./AccentPicker";
+import { UpdatesPanel } from "./UpdatesPanel";
 
 const THEME_OPTIONS = [
   { value: "dark", label: "Dark", icon: <Moon className="size-3.5" /> },
@@ -82,13 +83,9 @@ export function SettingsPage() {
             description="Keep PeriphOS running in the system tray when the window is closed."
             control={<PlannedSwitch label="Minimize to tray" />}
           />
-          <SettingRow
-            disabled
-            title={<>Check for updates <PlannedTag /></>}
-            description="Notify you when a new release is available."
-            control={<PlannedSwitch label="Check for updates" />}
-          />
         </Panel>
+
+        <UpdatesPanel />
 
         <Panel title="Data">
           <SettingRow

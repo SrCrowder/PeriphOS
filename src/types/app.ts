@@ -9,6 +9,6 @@ export interface AppInfo {
 
 /** Error shape returned by every backend command. */
 export interface IpcError {
-  code: "not_found" | "validation" | "conflict" | "unsupported" | "storage" | "device" | "unknown";
+  code: "not_found" | "validation" | "conflict" | "unsupported" | "storage" | "device" | "update" | "unknown";
   message: string;
 }

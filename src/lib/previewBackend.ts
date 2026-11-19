@@ -108,6 +108,14 @@ const handlers: { [C in CommandName]: (args: Commands[C]["args"]) => Commands[C]
     );
     return find(id);
   },
+  get_update_status: () => ({
+    currentVersion: "0.1.0",
+    channel: settings.updateChannel ?? "stable",
+    buildChannel: "stable",
+    configured: false,
+  }),
+  check_for_update: () => fail("unsupported", "Updates are only available in the desktop app."),
+  install_update: () => fail("unsupported", "Updates are only available in the desktop app."),
   get_settings: () => ({ ...settings }),
   update_settings: ({ settings: next }) => {
     settings = { ...next };
