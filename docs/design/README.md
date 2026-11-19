@@ -16,3 +16,23 @@ and accent color options.
 | D · Tactile | [mocks/d-tactile.html](mocks/d-tactile.html) | **Current default.** |
 
 Open a mock directly in a browser to view it.
+
+## Logo
+
+The current mark is **Dial** ([logos/dial.svg](logos/dial.svg)): a control knob on a signal
+tile. Inside the app it is drawn with theme tokens, so it follows the selected accent color;
+the app icon (`public/periphos.svg`, `src-tauri/icons/`) uses the default orange.
+
+Alternative marks are kept for a future appearance selector, next to the interface styles:
+
+| Mark | File |
+| ---- | ---- |
+| Dial (current) | [logos/dial.svg](logos/dial.svg) |
+| P-dot (first logo) | [logos/p-dot.svg](logos/p-dot.svg) |
+| Mouse | [logos/mouse.svg](logos/mouse.svg) |
+| Keycap | [logos/keycap.svg](logos/keycap.svg) |
+| Profile slots | [logos/profile-slots.svg](logos/profile-slots.svg) |
+| Signal ring | [logos/signal-ring.svg](logos/signal-ring.svg) |
+
+Regenerate the app icons after changing the mark: render `public/periphos.svg` to a
+1024 px PNG and run `npx tauri icon <png> -o src-tauri/icons`.

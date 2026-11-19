@@ -48,6 +48,6 @@ what exists today. Legend: ✅ implemented, 🟡 partially implemented, ⏳ plan
 - ⏳ **Wireless battery monitor**: battery level of wireless mice, keyboards and headsets,
   with low-battery notifications and a tray indicator
 - ⏳ Profile import/export and full backup/restore
-- ⏳ Selectable interface styles (Graphite, Stage, Mono) besides the default Tactile style
+- ⏳ Appearance selector: interface styles (Graphite, Stage, Mono) and logo marks besides the default Tactile style and Dial logo
 - ⏳ Community driver/extension model
 - ⏳ Linux builds and packaging as a first-class target
