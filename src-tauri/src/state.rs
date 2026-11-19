@@ -18,6 +18,7 @@ impl AppState {
         // Every device backend is registered here (see docs/ARCHITECTURE.md).
         let mut devices = DeviceManager::new();
         devices.register(Box::new(periphos_hid::HidDriver::new()));
+        devices.register(Box::new(periphos_logitech::LogitechDriver::new()));
         Ok(Self {
             storage: Mutex::new(storage),
             devices,
