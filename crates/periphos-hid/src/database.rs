@@ -20,6 +20,9 @@ pub struct KnownDevice {
     pub sources: Vec<String>,
     #[serde(default)]
     pub note: Option<String>,
+    /// Created by software rather than hardware.
+    #[serde(default, rename = "virtual")]
+    pub is_virtual: bool,
     pub capabilities: Vec<Capability>,
 }
 
@@ -91,6 +94,18 @@ mod tests {
             assert_eq!(db.lookup(0x31e3, pid).unwrap().name, "80HE");
         }
         assert!(db.lookup(0x31e3, 0x1500).is_none());
+    }
+
+    #[test]
+    fn devices_reported_by_a_tester_are_identified() {
+        let db = bundled();
+        assert!(db.lookup(0x046d, 0xc232).unwrap().is_virtual);
+        assert_eq!(
+            db.lookup(0x046d, 0xc52b).unwrap().kind,
+            DeviceKind::Receiver
+        );
+        assert_eq!(db.lookup(0x1b1c, 0x1bf0).unwrap().name, "M75 Gaming Mouse");
+        assert_eq!(db.vendor_name(0x1b1c), Some("Corsair"));
     }
 
     #[test]

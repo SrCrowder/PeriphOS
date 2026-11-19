@@ -30,8 +30,10 @@ what exists today. Legend: ✅ implemented, 🟡 partially implemented, ⏳ plan
 - ✅ Manufacturer, model, USB ID, device type and connection type (USB, Bluetooth, receiver)
 - ✅ Connection and disconnection pushed to the UI (2-second polling)
 - ✅ Device detail page with each feature and its support level
-- ✅ Device database with sources (`crates/periphos-hid/devices.json`): Logitech G502 X family
-  and LIGHTSPEED receiver, Wooting keyboards (80HE with full feature list)
+- ✅ Device database with sources (`crates/periphos-hid/devices.json`): Logitech G502 X family,
+  LIGHTSPEED and Unifying receivers, Wooting keyboards (80HE with full feature list), Corsair M75
+- ✅ Virtual devices created by other software (e.g. the G HUB virtual keyboard) are recognised
+  and hidden by default
 - 🟡 Wireless devices behind a receiver show up as the receiver until the vendor protocol
   (e.g. Logitech HID++) is implemented
 - 🟡 Two identical devices without a serial number are shown as one

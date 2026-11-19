@@ -21,6 +21,8 @@ pub enum ConnectionType {
     Bluetooth,
     /// Proprietary 2.4 GHz link through a USB receiver.
     Receiver,
+    /// Created by software (e.g. a manufacturer app's driver), not hardware.
+    Virtual,
     Unknown,
 }
 

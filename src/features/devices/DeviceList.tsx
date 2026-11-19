@@ -27,7 +27,9 @@ export function DeviceList({ devices }: { devices: DeviceInfo[] }) {
                 {device.manufacturer} {device.name}
               </p>
               <p className="truncate text-[13px] text-muted">
-                {KIND_LABEL[device.kind]}, {CONNECTION_LABEL[device.connection]}
+                {device.connection === "virtual"
+                  ? `Virtual ${KIND_LABEL[device.kind].toLowerCase()}`
+                  : `${KIND_LABEL[device.kind]}, ${CONNECTION_LABEL[device.connection]}`}
                 <span className="text-subtle tabular-nums">
                   {" "}
                   · {formatUsbId(device.vendorId)}:{formatUsbId(device.productId)}

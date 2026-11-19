@@ -105,6 +105,7 @@ pub fn classify(interfaces: &[HidInterface], db: &Database) -> Vec<DeviceInfo> {
                 .or(detected_kind)
                 .unwrap_or(DeviceKind::Other);
             let connection = match first.bus {
+                _ if known.is_some_and(|k| k.is_virtual) => ConnectionType::Virtual,
                 Bus::Bluetooth => ConnectionType::Bluetooth,
                 _ if kind == DeviceKind::Receiver => ConnectionType::Receiver,
                 Bus::Usb => ConnectionType::Usb,
@@ -214,6 +215,16 @@ mod tests {
         a.serial_number = Some("A".into());
         b.serial_number = Some("B".into());
         assert_eq!(classify(&[a, b], bundled()).len(), 2);
+    }
+
+    #[test]
+    fn software_devices_are_marked_virtual() {
+        let mut ghub = iface(0x046d, 0xc232, 0x01, USAGE_KEYBOARD, -1);
+        ghub.bus = Bus::Other;
+        assert_eq!(
+            classify(&[ghub], bundled())[0].connection,
+            ConnectionType::Virtual
+        );
     }
 
     #[test]

@@ -7,7 +7,7 @@ import { selectDevice, useDevices } from "@/stores/devices";
 import { useNavigation } from "@/stores/navigation";
 
 import { DeviceIllustration } from "./DeviceIllustration";
-import { CONNECTION_LABEL, describeCapability, KIND_LABEL } from "./labels";
+import { describeCapability, describeDevice } from "./labels";
 import { SUPPORT_LEVELS } from "./supportLevels";
 
 export function DeviceDetailPage() {
@@ -48,10 +48,7 @@ export function DeviceDetailPage() {
             <Led on /> Connected
           </p>
           <h1 className="mt-2 font-display text-[40px] leading-none break-words">{device.name}</h1>
-          <p className="mt-2 text-sm text-muted">
-            {device.manufacturer}, {KIND_LABEL[device.kind].toLowerCase()} over{" "}
-            {CONNECTION_LABEL[device.connection]}
-          </p>
+          <p className="mt-2 text-sm text-muted">{describeDevice(device)}</p>
           {device.note && <p className="mt-4 max-w-xl text-[13px] text-muted">{device.note}</p>}
         </div>
       </section>

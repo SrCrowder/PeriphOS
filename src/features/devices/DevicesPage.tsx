@@ -1,4 +1,5 @@
 import { CircleAlert, RefreshCw, Unplug } from "lucide-react";
+import { useState } from "react";
 
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Button, EmptyState, Panel, Spinner } from "@/components/ui";
@@ -6,12 +7,17 @@ import { PLATFORM_LABEL } from "@/lib/format";
 import { useDevices } from "@/stores/devices";
 
 import { DeviceList } from "./DeviceList";
+import { isPhysical } from "./labels";
 import { SupportLevelLegend } from "./SupportLevelLegend";
 
 export function DevicesPage() {
   const { overview, scanning, error, scan } = useDevices();
 
+  const [showVirtual, setShowVirtual] = useState(false);
   const noBackends = overview !== null && overview.drivers.length === 0;
+  const all = overview?.devices ?? [];
+  const virtualCount = all.filter((d) => !isPhysical(d)).length;
+  const shown = showVirtual ? all : all.filter(isPhysical);
 
   return (
     <>
@@ -35,8 +41,8 @@ export function DevicesPage() {
             <div className="grid place-items-center py-16 text-muted">
               <Spinner />
             </div>
-          ) : overview.devices.length > 0 ? (
-            <DeviceList devices={overview.devices} />
+          ) : shown.length > 0 ? (
+            <DeviceList devices={shown} />
           ) : (
             <EmptyState icon={<Unplug />} title="No devices detected">
               {noBackends ? (
@@ -51,6 +57,17 @@ export function DevicesPage() {
                 </>
               )}
             </EmptyState>
+          )}
+          {virtualCount > 0 && (
+            <div className="flex items-center justify-between gap-4 border-t border-line px-6 py-3 text-[13px] text-muted">
+              <span>
+                {virtualCount === 1 ? "1 virtual device" : `${virtualCount} virtual devices`} created by
+                other software {showVirtual ? "shown" : "hidden"}.
+              </span>
+              <Button size="sm" variant="ghost" onClick={() => setShowVirtual((v) => !v)}>
+                {showVirtual ? "Hide virtual devices" : "Show virtual devices"}
+              </Button>
+            </div>
           )}
         </Panel>
 

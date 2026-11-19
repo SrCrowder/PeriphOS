@@ -8,6 +8,8 @@ import { useDevices } from "@/stores/devices";
 import { useNavigation } from "@/stores/navigation";
 import { selectDefaultProfile, useProfiles } from "@/stores/profiles";
 
+import { isPhysical } from "@/features/devices/labels";
+
 import { ProfileDial } from "./ProfileDial";
 
 const RECENT_LIMIT = 5;
@@ -22,7 +24,7 @@ export function DashboardPage() {
   const info = useAppInfo((s) => s.info);
 
   const recent = [...profiles].sort((a, b) => b.updatedAt - a.updatedAt).slice(0, RECENT_LIMIT);
-  const devices = overview?.devices ?? [];
+  const devices = (overview?.devices ?? []).filter(isPhysical);
 
   return (
     <div className="grid gap-4 lg:grid-cols-[1.6fr_1fr]">

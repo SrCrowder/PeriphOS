@@ -1,4 +1,4 @@
-import type { Capability, ConnectionType, DeviceKind } from "@/types/device";
+import type { Capability, ConnectionType, DeviceInfo, DeviceKind } from "@/types/device";
 
 export const KIND_LABEL: Record<DeviceKind, string> = {
   mouse: "Mouse",
@@ -13,8 +13,19 @@ export const CONNECTION_LABEL: Record<ConnectionType, string> = {
   usb: "USB",
   bluetooth: "Bluetooth",
   receiver: "USB receiver",
+  virtual: "Virtual (created by software)",
   unknown: "Unknown connection",
 };
+
+/** "Logitech, mouse over USB" / "Logitech, virtual keyboard created by software". */
+export function describeDevice(device: DeviceInfo): string {
+  const kind = KIND_LABEL[device.kind].toLowerCase();
+  return device.connection === "virtual"
+    ? `${device.manufacturer}, virtual ${kind} created by software`
+    : `${device.manufacturer}, ${kind} over ${CONNECTION_LABEL[device.connection]}`;
+}
+
+export const isPhysical = (device: DeviceInfo) => device.connection !== "virtual";
 
 const number = new Intl.NumberFormat("en");
 

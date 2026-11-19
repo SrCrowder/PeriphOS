@@ -24,7 +24,8 @@ export interface Capability {
 }
 
 export type DeviceKind = "mouse" | "keyboard" | "headset" | "controller" | "receiver" | "other";
-export type ConnectionType = "usb" | "bluetooth" | "receiver" | "unknown";
+/** `virtual`: created by software (e.g. a manufacturer app), not hardware. */
+export type ConnectionType = "usb" | "bluetooth" | "receiver" | "virtual" | "unknown";
 
 export interface DeviceInfo {
   id: string;
