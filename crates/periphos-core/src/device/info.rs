@@ -28,6 +28,38 @@ pub enum ConnectionType {
     Unknown,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub enum ChargingState {
+    Discharging,
+    Charging,
+    Full,
+    /// The device reports a battery or charging error.
+    Error,
+}
+
+/// Coarse battery level for devices that do not report a percentage.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub enum BatteryLevel {
+    Full,
+    Good,
+    Low,
+    Critical,
+    Empty,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct BatteryState {
+    /// Charge in percent, when the device reports or allows estimating it.
+    pub percent: Option<u8>,
+    pub level: Option<BatteryLevel>,
+    pub charging: ChargingState,
+    /// True when `percent` is estimated from the battery voltage.
+    pub estimated: bool,
+}
+
 /// A peripheral as reported by a driver.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -50,4 +82,8 @@ pub struct DeviceInfo {
     pub interface_count: u16,
     /// Human-readable remark about how the device is supported.
     pub note: Option<String>,
+    /// Current battery state, for drivers that can read it.
+    pub battery: Option<BatteryState>,
+    /// Name of the receiver the device is connected through, if any.
+    pub connected_via: Option<String>,
 }

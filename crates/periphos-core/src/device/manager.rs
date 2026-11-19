@@ -106,6 +106,8 @@ mod tests {
                 known_model: false,
                 interface_count: 1,
                 note: None,
+                battery: None,
+                connected_via: None,
             }])
         }
     }

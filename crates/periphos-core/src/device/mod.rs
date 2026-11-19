@@ -18,5 +18,5 @@ mod manager;
 
 pub use capability::{Capability, CapabilityKind, SupportLevel};
 pub use driver::{DeviceDriver, DriverInfo, Platform};
-pub use info::{ConnectionType, DeviceInfo, DeviceKind};
+pub use info::{BatteryLevel, BatteryState, ChargingState, ConnectionType, DeviceInfo, DeviceKind};
 pub use manager::{DeviceManager, DeviceOverview};
