@@ -109,10 +109,19 @@ permissions on either platform.
 The app rescans every two seconds on a background thread (`src-tauri/src/device_watcher.rs`)
 and emits a `devices-changed` event when the result changes.
 
+### Device settings
+
+Drivers can implement `read_settings` and `apply_setting` on `DeviceDriver` (both default to
+"unsupported"). `DeviceManager::driver_for` routes a device ID to its driver. After a change,
+the app reads the settings back and tells the user whether the device really uses the new
+value, because a device can accept a request and still keep another value (for example when
+a profile stored in its memory is in control).
+
 ### `logitech-hidpp` (crates/periphos-logitech)
 
 Talks Logitech's HID++ protocol to Logitech receivers to find the devices connected through
-them and read their battery. It only sends read requests.
+them, read their battery, and read and change sensitivity (DPI, feature `0x2201`) and report
+rate (`0x8060` / `0x8061`). It reports whether an onboard profile is active (`0x8100`).
 
 - It opens the receiver's vendor HID collections (usage page `0xFF00`, usages `0x0001` for
   short and `0x0002` for long reports). On Windows each is a separate handle; on Linux one
@@ -123,7 +132,11 @@ them and read their battery. It only sends read requests.
 - Requests carry software ID `0x09` so replies are not confused with those of other HID++
   software running at the same time (G HUB uses `0x0D`, Solaar `0x0B`, OpenRGB `0x07`).
 - Probing takes up to a few seconds, so it runs on a background thread every 10 seconds and
-  `enumerate` returns the latest result.
+  `enumerate` returns the latest result. A slot whose device does not answer (asleep, or the
+  reply was lost) keeps its previous entry for 60 seconds; only an empty slot removes it.
+- All HID++ traffic of the driver goes through one lock, so a user change never interleaves
+  with a background probe.
+- Changes are applied only if the value is in the list the device itself reports.
 - Protocol logic is tested against simulated devices (`session.rs`, `probe.rs`).
 - It was implemented from public descriptions of HID++ (Logitech's feature documentation and
   the Solaar and libratbag projects, whose code is GPL). No code from those projects is used;

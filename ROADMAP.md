@@ -42,8 +42,12 @@ what exists today. Legend: ✅ implemented, 🟡 partially implemented, ⏳ plan
 - ✅ Devices connected through Logitech receivers (Unifying, LIGHTSPEED, Nano, Bolt) are
   identified by name and type
 - ✅ Battery level and charging state (unified battery, battery status, voltage and ADC features)
-- ⏳ Feature list of the identified model (DPI, polling rate, onboard profiles) from the database
-- ⏳ Change DPI and polling rate
+- ✅ Feature list of the identified model from the database (matched by the name the device reports)
+- ✅ Read and change DPI and report rate; every change is validated against the values the
+  device accepts and read back to confirm it took effect
+- ✅ Devices that stop answering for a moment (asleep to save battery) stay listed for 60 seconds
+- ⏳ Save DPI and report rate in PeriphOS profiles and apply them on profile switch
+- ⏳ Switch onboard memory mode on and off
 - ⏳ Devices connected by cable and over Bluetooth
 - ⏳ Linux: avoid listing a receiver-connected device twice (the kernel also exposes it)
 
