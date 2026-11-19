@@ -55,7 +55,9 @@ repository's secrets and in the maintainer's backup.
 - Installers are not code-signed for Windows yet, so SmartScreen warns on first install.
   Updates installed from inside the app are verified with the updater signature regardless.
 - Local builds (`npm run tauri build`) do not create update artifacts and need no key.
-- Planned hardening: enable `requireSignedVersion` once the Tauri CLI records the version in
-  update signatures (it does not as of CLI 2.12.6), which prevents downgrade attacks.
+- `requireSignedVersion` is enabled: the version announced in `latest.json` must match the
+  version inside the installer's signature (written by `tauri build`). This blocks downgrade
+  attacks that pair a newer version number with an older signed installer. Note that
+  `tauri signer sign` does not record the version, so always sign through `tauri build`.
 - Linux: AppImage builds will update in place once Linux builds are published; distro
   packages (.deb/.rpm) update through the system package manager.

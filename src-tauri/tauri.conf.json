@@ -41,6 +41,7 @@
   "plugins": {
     "updater": {
       "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDkzQzhFQkI5MTJGMkY5QjEKUldTeCtmSVN1ZXZJazJOTXZSZXQrUktJb3MxK1ZWbFZobVgrVVhBNGtpYVkzdHR2bWRiVmZUS0kK",
+      "requireSignedVersion": true,
       "windows": {
         "installMode": "passive"
       }
