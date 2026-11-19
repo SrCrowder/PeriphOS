@@ -1,0 +1,14 @@
+[package]
+name = "periphos-hid"
+description = "Generic USB HID device detection for PeriphOS."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+hidapi = "2.6.7"
+periphos-core.workspace = true
+serde.workspace = true
+serde_json.workspace = true

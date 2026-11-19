@@ -1,0 +1,93 @@
+{
+  "$comment": "Known devices. Every entry must cite a source for its IDs and capabilities. productIdMask (hex) is applied before comparing product IDs. Capabilities use the periphos-core serde format; support is what PeriphOS can do today, not what the hardware can do.",
+  "vendors": {
+    "046d": "Logitech",
+    "31e3": "Wooting"
+  },
+  "devices": [
+    {
+      "vendorId": "046d",
+      "productId": "c099",
+      "name": "G502 X",
+      "kind": "mouse",
+      "sources": ["https://support.logi.com/hc/en-in/articles/7638880729367-Specification-G502-X-Gaming-Mouse"],
+      "note": "Onboard settings use Logitech's HID++ protocol, which PeriphOS does not implement yet.",
+      "capabilities": [
+        { "kind": { "type": "buttonRemap", "programmable": 13 }, "support": "vendorProtocol" },
+        { "kind": { "type": "dpi", "min": 100, "max": 25600, "step": null }, "support": "vendorProtocol" },
+        { "kind": { "type": "pollingRate", "maxHz": 1000 }, "support": "vendorProtocol" },
+        { "kind": { "type": "onboardProfiles", "slots": 5 }, "support": "vendorProtocol" }
+      ]
+    },
+    {
+      "vendorId": "046d",
+      "productId": "c098",
+      "name": "G502 X LIGHTSPEED",
+      "kind": "mouse",
+      "sources": ["https://support.logi.com/hc/en-in/articles/7639086777111-Specification-G502-X-LIGHTSPEED-Gaming-Mouse"],
+      "note": "Connected with its USB cable. Onboard settings use Logitech's HID++ protocol, which PeriphOS does not implement yet.",
+      "capabilities": [
+        { "kind": { "type": "buttonRemap", "programmable": 13 }, "support": "vendorProtocol" },
+        { "kind": { "type": "dpi", "min": 100, "max": 25600, "step": null }, "support": "vendorProtocol" },
+        { "kind": { "type": "pollingRate", "maxHz": 1000 }, "support": "vendorProtocol" },
+        { "kind": { "type": "onboardProfiles", "slots": 5 }, "support": "vendorProtocol" },
+        { "kind": { "type": "battery" }, "support": "vendorProtocol" }
+      ]
+    },
+    {
+      "vendorId": "046d",
+      "productId": "c095",
+      "name": "G502 X PLUS",
+      "kind": "mouse",
+      "sources": [
+        "https://support.logi.com/hc/en-gb/articles/7639125500183-Specification-G502-X-PLUS-Wireless-RGB-Gaming-Mouse"
+      ],
+      "note": "Connected with its USB cable. Onboard settings use Logitech's HID++ protocol, which PeriphOS does not implement yet.",
+      "capabilities": [
+        { "kind": { "type": "buttonRemap", "programmable": 13 }, "support": "vendorProtocol" },
+        { "kind": { "type": "dpi", "min": 100, "max": 25600, "step": null }, "support": "vendorProtocol" },
+        { "kind": { "type": "pollingRate", "maxHz": 1000 }, "support": "vendorProtocol" },
+        { "kind": { "type": "onboardProfiles", "slots": 5 }, "support": "vendorProtocol" },
+        { "kind": { "type": "lighting", "perKey": false, "zones": 8 }, "support": "vendorProtocol" },
+        { "kind": { "type": "battery" }, "support": "vendorProtocol" }
+      ]
+    },
+    {
+      "vendorId": "046d",
+      "productId": "c547",
+      "name": "LIGHTSPEED receiver",
+      "kind": "receiver",
+      "sources": ["https://support.logi.com/hc/en-in/articles/7639086777111-Specification-G502-X-LIGHTSPEED-Gaming-Mouse"],
+      "note": "The mouse or keyboard paired with this receiver can only be identified through Logitech's HID++ protocol, which PeriphOS does not implement yet.",
+      "capabilities": []
+    },
+    {
+      "vendorId": "31e3",
+      "productId": "1400",
+      "productIdMask": "fff0",
+      "name": "80HE",
+      "kind": "keyboard",
+      "sources": [
+        "https://gitlab.com/CalcProgrammer1/OpenRGB/-/blob/master/Controllers/WootingKeyboardController/WootingKeyboardControllerDetect.cpp",
+        "https://wooting.io/post/wooting-80he-the-true-polling-rate",
+        "https://www.maxgaming.com/en/gaming-keyboard/wooting-80he-ansi"
+      ],
+      "note": "Settings are stored on the keyboard and configured through Wooting's protocol, which PeriphOS does not implement yet.",
+      "capabilities": [
+        { "kind": { "type": "analogKeys" }, "support": "vendorProtocol", "note": "Actuation point (0.1 to 4.0 mm) and rapid trigger." },
+        { "kind": { "type": "keyRemap" }, "support": "vendorProtocol" },
+        { "kind": { "type": "pollingRate", "maxHz": 8000 }, "support": "vendorProtocol" },
+        { "kind": { "type": "lighting", "perKey": true, "zones": null }, "support": "vendorProtocol" }
+      ]
+    },
+    { "vendorId": "31e3", "productId": "1100", "productIdMask": "fff0", "name": "One", "kind": "keyboard", "sources": ["https://gitlab.com/CalcProgrammer1/OpenRGB/-/blob/master/Controllers/WootingKeyboardController/WootingKeyboardControllerDetect.cpp"], "capabilities": [] },
+    { "vendorId": "31e3", "productId": "1200", "productIdMask": "fff0", "name": "Two", "kind": "keyboard", "sources": ["https://gitlab.com/CalcProgrammer1/OpenRGB/-/blob/master/Controllers/WootingKeyboardController/WootingKeyboardControllerDetect.cpp"], "capabilities": [] },
+    { "vendorId": "31e3", "productId": "1210", "productIdMask": "fff0", "name": "Two Lekker Edition", "kind": "keyboard", "sources": ["https://gitlab.com/CalcProgrammer1/OpenRGB/-/blob/master/Controllers/WootingKeyboardController/WootingKeyboardControllerDetect.cpp"], "capabilities": [] },
+    { "vendorId": "31e3", "productId": "1220", "productIdMask": "fff0", "name": "Two HE", "kind": "keyboard", "sources": ["https://gitlab.com/CalcProgrammer1/OpenRGB/-/blob/master/Controllers/WootingKeyboardController/WootingKeyboardControllerDetect.cpp"], "capabilities": [] },
+    { "vendorId": "31e3", "productId": "1230", "productIdMask": "fff0", "name": "Two HE (ARM)", "kind": "keyboard", "sources": ["https://gitlab.com/CalcProgrammer1/OpenRGB/-/blob/master/Controllers/WootingKeyboardController/WootingKeyboardControllerDetect.cpp"], "capabilities": [] },
+    { "vendorId": "31e3", "productId": "1300", "productIdMask": "fff0", "name": "60HE", "kind": "keyboard", "sources": ["https://gitlab.com/CalcProgrammer1/OpenRGB/-/blob/master/Controllers/WootingKeyboardController/WootingKeyboardControllerDetect.cpp"], "capabilities": [] },
+    { "vendorId": "31e3", "productId": "1310", "productIdMask": "fff0", "name": "60HE (ARM)", "kind": "keyboard", "sources": ["https://gitlab.com/CalcProgrammer1/OpenRGB/-/blob/master/Controllers/WootingKeyboardController/WootingKeyboardControllerDetect.cpp"], "capabilities": [] },
+    { "vendorId": "31e3", "productId": "1320", "productIdMask": "fff0", "name": "60HE+", "kind": "keyboard", "sources": ["https://gitlab.com/CalcProgrammer1/OpenRGB/-/blob/master/Controllers/WootingKeyboardController/WootingKeyboardControllerDetect.cpp"], "capabilities": [] },
+    { "vendorId": "31e3", "productId": "1340", "productIdMask": "fff0", "name": "60HE v2", "kind": "keyboard", "sources": ["https://gitlab.com/CalcProgrammer1/OpenRGB/-/blob/master/Controllers/WootingKeyboardController/WootingKeyboardControllerDetect.cpp"], "capabilities": [] }
+  ]
+}
