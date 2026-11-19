@@ -11,10 +11,10 @@
 
 ---
 
-> **Status: early development (Phase 2).** PeriphOS detects mice, keyboards and controllers,
-> identifies known models and shows what each one can do, and manages profiles and settings.
-> It **does not change any device setting yet**: that needs manufacturer drivers, which come
-> next. See the [roadmap](ROADMAP.md).
+> **Status: early development.** PeriphOS detects mice, keyboards and controllers, identifies
+> known models and shows what each one can do, finds devices connected through Logitech
+> receivers and shows their battery, and manages profiles and settings. It **does not change
+> any device setting yet**. See the [roadmap](ROADMAP.md).
 
 ## Why
 
@@ -83,6 +83,7 @@ cargo clippy --workspace --all-targets
 crates/periphos-core     Hardware-agnostic domain: devices, capabilities, drivers, profiles, settings
 crates/periphos-storage  SQLite persistence with versioned migrations
 crates/periphos-hid      Generic HID device detection and the known-device database
+crates/periphos-logitech Logitech HID++ driver (receivers, battery)
 src-tauri/               Desktop app: Tauri setup and IPC commands (thin layer)
 src/                     React + TypeScript frontend
 docs/                    Architecture, design notes and release process

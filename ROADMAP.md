@@ -34,10 +34,18 @@ what exists today. Legend: ✅ implemented, 🟡 partially implemented, ⏳ plan
   LIGHTSPEED and Unifying receivers, Wooting keyboards (80HE with full feature list), Corsair M75
 - ✅ Virtual devices created by other software (e.g. the G HUB virtual keyboard) are recognised
   and hidden by default
-- 🟡 Wireless devices behind a receiver show up as the receiver until the vendor protocol
-  (e.g. Logitech HID++) is implemented
 - 🟡 Two identical devices without a serial number are shown as one
 - ⏳ Native hotplug notifications (WM_DEVICECHANGE on Windows, udev monitor on Linux)
+
+## Logitech HID++ driver 🟡
+
+- ✅ Devices connected through Logitech receivers (Unifying, LIGHTSPEED, Nano, Bolt) are
+  identified by name and type
+- ✅ Battery level and charging state (unified battery, battery status, voltage and ADC features)
+- ⏳ Feature list of the identified model (DPI, polling rate, onboard profiles) from the database
+- ⏳ Change DPI and polling rate
+- ⏳ Devices connected by cable and over Bluetooth
+- ⏳ Linux: avoid listing a receiver-connected device twice (the kernel also exposes it)
 
 ## Phase 3: Profiles and game detection ⏳
 
@@ -59,8 +67,8 @@ what exists today. Legend: ✅ implemented, 🟡 partially implemented, ⏳ plan
 - ⏳ RGB Studio and lighting adapters
 - ⏳ First manufacturer-specific drivers (onboard DPI, polling rate, onboard profiles):
   Logitech HID++ (documented by the Solaar and libratbag projects) and Wooting (open SDKs)
-- ⏳ **Wireless battery monitor**: battery level of wireless mice, keyboards and headsets,
-  with low-battery notifications and a tray indicator
+- 🟡 **Wireless battery monitor**: battery level is shown for Logitech wireless devices;
+  low-battery notifications, a tray indicator and other manufacturers are planned
 - ⏳ Profile import/export and full backup/restore
 - ⏳ Appearance selector: interface styles (Graphite, Stage, Mono) and logo marks besides the default Tactile style and Dial logo
 - ⏳ Community driver/extension model

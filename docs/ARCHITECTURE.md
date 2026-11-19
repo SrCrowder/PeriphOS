@@ -109,9 +109,30 @@ permissions on either platform.
 The app rescans every two seconds on a background thread (`src-tauri/src/device_watcher.rs`)
 and emits a `devices-changed` event when the result changes.
 
-Next drivers: vendor protocols where open documentation or compatible open-source
-implementations exist (Logitech HID++ as documented by the Solaar and libratbag projects,
-Wooting's open SDKs).
+### `logitech-hidpp` (crates/periphos-logitech)
+
+Talks Logitech's HID++ protocol to Logitech receivers to find the devices connected through
+them and read their battery. It only sends read requests.
+
+- It opens the receiver's vendor HID collections (usage page `0xFF00`, usages `0x0001` for
+  short and `0x0002` for long reports). On Windows each is a separate handle; on Linux one
+  hidraw node carries both. `transport.rs` hides the difference.
+- Every slot (1 to 6) is pinged; online devices are asked for their name and type (feature
+  `0x0005`) and battery (`0x1004`, `0x1000`, `0x1001` or `0x1F20`, whichever they implement).
+  The wireless product ID comes from the receiver's pairing register.
+- Requests carry software ID `0x09` so replies are not confused with those of other HID++
+  software running at the same time (G HUB uses `0x0D`, Solaar `0x0B`, OpenRGB `0x07`).
+- Probing takes up to a few seconds, so it runs on a background thread every 10 seconds and
+  `enumerate` returns the latest result.
+- Protocol logic is tested against simulated devices (`session.rs`, `probe.rs`).
+- It was implemented from public descriptions of HID++ (Logitech's feature documentation and
+  the Solaar and libratbag projects, whose code is GPL). No code from those projects is used;
+  only protocol facts such as message layouts, feature numbers and receiver product IDs.
+
+Known gap: on Linux the kernel's `hid-logitech-dj` driver also exposes devices connected
+through a receiver as their own HID devices, so they may be listed twice.
+
+Next drivers: Wooting (open SDKs) and more of HID++ (DPI, report rate).
 
 ## Persistence
 
