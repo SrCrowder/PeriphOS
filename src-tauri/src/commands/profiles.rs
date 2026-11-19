@@ -1,11 +1,12 @@
+use periphos_core::apps::{AppIdentity, AppRule, AppRuleKind};
 use periphos_core::profile::{DeviceProfileSettings, Profile, ProfileDraft};
 use periphos_core::CoreError;
-use tauri::{AppHandle, Emitter, State};
+use tauri::{AppHandle, State};
 
 use crate::commands::devices::blocking;
 use crate::error::IpcResult;
-use crate::profile_runtime::{self, ActivationReport, ApplyReason, PROFILE_APPLIED_EVENT};
-use crate::state::AppState;
+use crate::profile_runtime::{self, ActivationReport, ActiveProfileInfo, ApplyReason};
+use crate::state::{ActiveState, AppState, SwitchMode};
 
 #[tauri::command]
 pub fn list_profiles(state: State<'_, AppState>) -> IpcResult<Vec<Profile>> {
@@ -30,8 +31,13 @@ pub fn update_profile(
 pub fn delete_profile(state: State<'_, AppState>, id: String) -> IpcResult<()> {
     state.storage()?.delete_profile(&id)?;
     // Deleting the active profile falls back to the default one.
-    if state.active_profile_id()?.as_deref() == Some(id.as_str()) {
-        state.set_active_profile_id(None)?;
+    let active = state.active()?;
+    if active.profile_id.as_deref() == Some(id.as_str()) {
+        state.set_active(ActiveState {
+            profile_id: None,
+            matched_app: None,
+            ..active
+        })?;
     }
     Ok(())
 }
@@ -42,27 +48,92 @@ pub fn set_default_profile(state: State<'_, AppState>, id: String) -> IpcResult<
 }
 
 #[tauri::command]
-pub fn get_active_profile(state: State<'_, AppState>) -> IpcResult<Profile> {
-    Ok(profile_runtime::active_profile(&state)?)
+pub fn get_active_profile(state: State<'_, AppState>) -> IpcResult<ActiveProfileInfo> {
+    Ok(profile_runtime::active_info(&state)?)
 }
 
-/// Makes `id` the active profile and applies its device settings.
+/// Makes `id` the active profile and applies its device settings. Automatic
+/// switching pauses until the user resumes it.
 #[tauri::command]
 pub async fn activate_profile(app: AppHandle, id: String) -> IpcResult<ActivationReport> {
     blocking(app.clone(), move |state| {
         let profile = state.storage()?.get_profile(&id)?;
-        state.set_active_profile_id(Some(profile.id.clone()))?;
-        let devices = state.devices.scan().devices;
-        let results = profile_runtime::apply_to_devices(state, &profile, &devices)?;
-        let report = ActivationReport {
+        profile_runtime::switch_to(
+            &app,
+            state,
             profile,
-            reason: ApplyReason::Activated,
-            results,
-        };
-        let _ = app.emit(PROFILE_APPLIED_EVENT, &report);
-        Ok(report)
+            SwitchMode::Manual,
+            None,
+            ApplyReason::Activated,
+        )
     })
     .await
+}
+
+/// Returns to automatic switching, starting from the current foreground app.
+#[tauri::command]
+pub async fn resume_automatic_switching(app: AppHandle) -> IpcResult<ActiveProfileInfo> {
+    blocking(app.clone(), move |state| {
+        let current = state.active()?;
+        state.set_active(ActiveState {
+            mode: SwitchMode::Automatic,
+            matched_app: None,
+            ..current
+        })?;
+        match periphos_apps::foreground_app() {
+            Some(foreground) => profile_runtime::follow_foreground(&app, state, &foreground)?,
+            None => {
+                // Nothing to follow (e.g. PeriphOS itself is in front): use the default profile.
+                let default = state
+                    .storage()?
+                    .list_profiles()?
+                    .into_iter()
+                    .find(|p| p.is_default)
+                    .ok_or_else(|| CoreError::Storage("no default profile".into()))?;
+                profile_runtime::switch_to(
+                    &app,
+                    state,
+                    default,
+                    SwitchMode::Automatic,
+                    None,
+                    ApplyReason::AppSwitched,
+                )?;
+            }
+        }
+        profile_runtime::active_info(state)
+    })
+    .await
+}
+
+#[tauri::command]
+pub fn list_app_rules(state: State<'_, AppState>, profile_id: String) -> IpcResult<Vec<AppRule>> {
+    Ok(state.storage()?.profile_app_rules(&profile_id)?)
+}
+
+#[tauri::command]
+pub fn add_app_rule(
+    state: State<'_, AppState>,
+    profile_id: String,
+    kind: AppRuleKind,
+    value: String,
+    display_name: String,
+) -> IpcResult<AppRule> {
+    Ok(state
+        .storage()?
+        .add_app_rule(&profile_id, kind, &value, &display_name)?)
+}
+
+#[tauri::command]
+pub fn delete_app_rule(state: State<'_, AppState>, id: String) -> IpcResult<()> {
+    Ok(state.storage()?.delete_app_rule(&id)?)
+}
+
+/// Applications with an open window, for linking them to a profile.
+#[tauri::command]
+pub async fn list_running_apps() -> IpcResult<Vec<AppIdentity>> {
+    tauri::async_runtime::spawn_blocking(periphos_apps::running_apps)
+        .await
+        .map_err(|e| CoreError::Device(format!("could not list applications: {e}")).into())
 }
 
 #[tauri::command]

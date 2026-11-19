@@ -4,6 +4,7 @@
 //! persistence in `periphos-storage`; here we only open resources, register
 //! IPC commands and translate errors.
 
+mod app_watcher;
 mod commands;
 mod device_watcher;
 mod error;
@@ -22,6 +23,7 @@ const DATABASE_FILE: &str = "periphos.db";
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_updater::Builder::new().build())
+        .plugin(tauri_plugin_dialog::init())
         .manage(PendingUpdate::default())
         .setup(|app| {
             let data_dir = app.path().app_data_dir()?;
@@ -29,6 +31,7 @@ pub fn run() {
             let state = AppState::new(data_dir.join(DATABASE_FILE))?;
             app.manage(state);
             device_watcher::spawn(app.handle().clone());
+            app_watcher::spawn(app.handle().clone());
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
@@ -43,6 +46,11 @@ pub fn run() {
             commands::profiles::set_default_profile,
             commands::profiles::get_active_profile,
             commands::profiles::activate_profile,
+            commands::profiles::resume_automatic_switching,
+            commands::profiles::list_app_rules,
+            commands::profiles::add_app_rule,
+            commands::profiles::delete_app_rule,
+            commands::profiles::list_running_apps,
             commands::profiles::list_profile_device_settings,
             commands::profiles::save_device_settings_to_profile,
             commands::profiles::delete_profile_device_settings,

@@ -5,11 +5,30 @@ use periphos_core::device::DeviceManager;
 use periphos_core::CoreError;
 use periphos_storage::Storage;
 
+/// How the active profile is chosen.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub enum SwitchMode {
+    /// Follows the foreground application; the default profile otherwise.
+    #[default]
+    Automatic,
+    /// Chosen by the user; stays until the user returns to automatic switching.
+    Manual,
+}
+
+#[derive(Debug, Clone, Default)]
+pub struct ActiveState {
+    /// `None` means the default profile.
+    pub profile_id: Option<String>,
+    pub mode: SwitchMode,
+    /// Linked application that selected the profile, in automatic mode.
+    pub matched_app: Option<String>,
+}
+
 /// Shared application state managed by Tauri.
 pub struct AppState {
     storage: Mutex<Storage>,
-    /// Profile chosen by the user; `None` means the default profile.
-    active_profile: Mutex<Option<String>>,
+    active: Mutex<ActiveState>,
     pub devices: DeviceManager,
     pub database_path: PathBuf,
 }
@@ -23,24 +42,24 @@ impl AppState {
         devices.register(Box::new(periphos_logitech::LogitechDriver::new()));
         Ok(Self {
             storage: Mutex::new(storage),
-            active_profile: Mutex::new(None),
+            active: Mutex::new(ActiveState::default()),
             devices,
             database_path,
         })
     }
 
-    pub fn active_profile_id(&self) -> Result<Option<String>, CoreError> {
-        self.active_profile
+    pub fn active(&self) -> Result<ActiveState, CoreError> {
+        self.active
             .lock()
             .map(|g| g.clone())
             .map_err(|_| CoreError::Storage("profile state lock was poisoned".into()))
     }
 
-    pub fn set_active_profile_id(&self, id: Option<String>) -> Result<(), CoreError> {
+    pub fn set_active(&self, state: ActiveState) -> Result<(), CoreError> {
         *self
-            .active_profile
+            .active
             .lock()
-            .map_err(|_| CoreError::Storage("profile state lock was poisoned".into()))? = id;
+            .map_err(|_| CoreError::Storage("profile state lock was poisoned".into()))? = state;
         Ok(())
     }
 
