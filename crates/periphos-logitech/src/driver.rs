@@ -7,8 +7,8 @@ use std::time::{Duration, Instant};
 
 use hidapi::{BusType, HidApi};
 use periphos_core::device::{
-    Capability, CapabilityKind, ConnectionType, DeviceDriver, DeviceInfo, DeviceSettings,
-    DriverInfo, Platform, SettingChange, SupportLevel,
+    ButtonAction, ButtonLayout, Capability, CapabilityKind, ConnectionType, DeviceDriver,
+    DeviceInfo, DeviceSettings, DriverInfo, Platform, SettingChange, SupportLevel,
 };
 use periphos_core::{CoreError, CoreResult};
 use periphos_hid::database::{self, KnownDevice};
@@ -125,6 +125,14 @@ impl LogitechDriver {
     }
 }
 
+fn model_name(s: &mut Session<HidTransport>, slot: u8) -> String {
+    s.name_and_type(slot)
+        .ok()
+        .flatten()
+        .map(|(name, _)| name)
+        .unwrap_or_default()
+}
+
 fn to_core_error(error: session::Error) -> CoreError {
     match error {
         session::Error::Timeout => {
@@ -169,6 +177,26 @@ impl DeviceDriver for LogitechDriver {
 
     fn read_settings(&self, device_id: &str) -> CoreResult<DeviceSettings> {
         self.with_device(device_id, settings::read_all)
+    }
+
+    fn read_buttons(&self, device_id: &str) -> CoreResult<ButtonLayout> {
+        self.with_device(device_id, |s, slot| {
+            let model = model_name(s, slot);
+            crate::onboard::read_buttons(s, slot, &model)
+        })?
+        .ok_or_else(|| CoreError::Unsupported("this device has no onboard profiles".into()))
+    }
+
+    fn set_button(
+        &self,
+        device_id: &str,
+        index: u8,
+        action: ButtonAction,
+    ) -> CoreResult<ButtonLayout> {
+        self.with_device(device_id, |s, slot| {
+            let model = model_name(s, slot);
+            crate::onboard::set_button(s, slot, &model, index, &action)
+        })
     }
 
     fn diagnostics(&self, device_id: &str) -> CoreResult<String> {

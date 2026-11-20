@@ -1,5 +1,6 @@
 use serde::{Deserialize, Serialize};
 
+use super::buttons::{ButtonAction, ButtonLayout};
 use super::info::DeviceInfo;
 use super::settings::{DeviceSettings, SettingChange};
 use crate::{CoreError, CoreResult};
@@ -74,6 +75,25 @@ pub trait DeviceDriver: Send + Sync {
     fn diagnostics(&self, _device_id: &str) -> CoreResult<String> {
         Err(CoreError::Unsupported(
             "no technical report is available for this device".into(),
+        ))
+    }
+
+    /// What each programmable button does.
+    fn read_buttons(&self, _device_id: &str) -> CoreResult<ButtonLayout> {
+        Err(CoreError::Unsupported(
+            "this device's buttons cannot be read yet".into(),
+        ))
+    }
+
+    /// Assigns `action` to button `index` and returns the layout read back.
+    fn set_button(
+        &self,
+        _device_id: &str,
+        _index: u8,
+        _action: ButtonAction,
+    ) -> CoreResult<ButtonLayout> {
+        Err(CoreError::Unsupported(
+            "this device's buttons cannot be changed yet".into(),
         ))
     }
 }

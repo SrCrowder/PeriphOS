@@ -11,12 +11,14 @@
 //! driver must only report `SupportLevel::Native` for features it can
 //! actually read and write.
 
+mod buttons;
 mod capability;
 mod driver;
 mod info;
 mod manager;
 mod settings;
 
+pub use buttons::{ButtonAction, ButtonBinding, ButtonLayout, MouseButton, SpecialFunction};
 pub use capability::{Capability, CapabilityKind, SupportLevel};
 pub use driver::{DeviceDriver, DriverInfo, Platform};
 pub use info::{BatteryLevel, BatteryState, ChargingState, ConnectionType, DeviceInfo, DeviceKind};

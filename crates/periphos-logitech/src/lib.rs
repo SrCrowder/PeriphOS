@@ -10,6 +10,7 @@
 //!   against simulated devices.
 //! - [`probe`]: what is paired with a receiver.
 //! - [`settings`]: DPI, report rate and onboard-profile mode.
+//! - [`onboard`]: button assignments in the onboard profiles (read and write).
 //! - [`diagnostics`]: read-only technical report (features, controls, memory).
 //! - `transport` / `driver`: real I/O through `hidapi`.
 //!
@@ -18,6 +19,7 @@
 //! those projects is used.
 
 pub mod diagnostics;
+pub mod onboard;
 pub mod probe;
 pub mod protocol;
 pub mod receivers;
