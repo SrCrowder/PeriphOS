@@ -99,8 +99,8 @@ what exists today. Legend: ✅ implemented, 🟡 partially implemented, ⏳ plan
 - 🟡 **Wireless battery monitor**: battery level for Logitech wireless devices, low-battery
   notifications with two configurable levels (sent once per discharge), levels in the tray
   tooltip and menu; other manufacturers are planned
-- ⏳ **Taskbar readout**: a compact, always-visible text next to the tray (for example battery
-  levels and the active profile), in the spirit of TraySense
+- ✅ **Battery in the tray**: one tray icon per wireless device showing its charge, coloured by
+  state (in the spirit of TraySense)
 - ⏳ Profile import/export and full backup/restore
 - ⏳ Languages: choose the app language in Settings (English first, Spanish next; translations
   contributed by the community)
