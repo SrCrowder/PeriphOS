@@ -9,7 +9,7 @@ import { toast } from "@/stores/toasts";
 import type { Profile } from "@/types/profile";
 
 import { ProfileFormDialog } from "./ProfileFormDialog";
-import { ProfileRow } from "./ProfileRow";
+import { ProfileCard } from "./ProfileCard";
 import { SwitchingPanel } from "./SwitchingPanel";
 
 export function ProfilesPage() {
@@ -59,12 +59,12 @@ export function ProfilesPage() {
       <div className="flex flex-col gap-4">
         <SwitchingPanel />
 
-        <Panel flush>
-          {status === "loading" || status === "idle" ? (
-            <div className="grid place-items-center py-16 text-muted">
-              <Spinner />
-            </div>
-          ) : status === "error" ? (
+        {status === "loading" || status === "idle" ? (
+          <div className="grid place-items-center py-16 text-muted">
+            <Spinner />
+          </div>
+        ) : status === "error" ? (
+          <Panel>
             <EmptyState
               icon={<CircleAlert />}
               title="Profiles could not be loaded"
@@ -72,26 +72,24 @@ export function ProfilesPage() {
             >
               {error}
             </EmptyState>
-          ) : (
-            <ul className="divide-y divide-line py-2">
-              {profiles.map((profile) => (
-                <ProfileRow
-                  key={profile.id}
-                  profile={profile}
-                  active={profile.id === activeId}
-                  activating={activating === profile.id}
-                  onActivate={() => void activateProfile(profile)}
-                  onEdit={() => {
-                    setEditing(profile);
-                    setFormOpen(true);
-                  }}
-                  onDelete={() => setDeleting(profile)}
-                  onSetDefault={() => void makeDefault(profile)}
-                />
-              ))}
-            </ul>
-          )}
-        </Panel>
+          </Panel>
+        ) : (
+          profiles.map((profile) => (
+            <ProfileCard
+              key={profile.id}
+              profile={profile}
+              active={profile.id === activeId}
+              activating={activating === profile.id}
+              onActivate={() => void activateProfile(profile)}
+              onEdit={() => {
+                setEditing(profile);
+                setFormOpen(true);
+              }}
+              onDelete={() => setDeleting(profile)}
+              onSetDefault={() => void makeDefault(profile)}
+            />
+          ))
+        )}
 
 
       </div>

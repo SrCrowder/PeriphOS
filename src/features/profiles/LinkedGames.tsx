@@ -1,57 +1,69 @@
-import { Gamepad2, Plus } from "lucide-react";
+import { Gamepad2, Plus, X } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import { cn } from "@/lib/cn";
+import { errorMessage } from "@/lib/errors";
 import { useAppRules } from "@/stores/appRules";
 import { toast } from "@/stores/toasts";
 import type { Profile } from "@/types/profile";
 
 import { LinkAppDialog } from "./LinkAppDialog";
 
-const VISIBLE_CHIPS = 4;
-
 /**
- * Linked games shown right in the profile row, with a "Link game" button that
- * is prominent while the profile has none.
+ * The games and apps that activate a profile, each removable, with a "Link
+ * game" button that is prominent while the profile has none.
  */
 export function LinkedGames({ profile }: { profile: Profile }) {
   const rules = useAppRules((s) => s.byProfile[profile.id]);
-  const { load, add } = useAppRules();
+  const { load, add, remove } = useAppRules();
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
-    if (!profile.isDefault) void load(profile.id).catch(() => {});
+    if (!profile.isDefault) void load(profile.id).catch((e) => toast.error(errorMessage(e)));
   }, [profile.id, profile.isDefault, load]);
 
   if (profile.isDefault) {
-    // Its own description usually says this already.
-    return profile.description ? null : (
-      <p className="text-xs text-subtle">Active when no linked game or app is in front.</p>
+    return (
+      <p className="text-[13px] text-muted">
+        Used whenever no linked game or app is in front, so nothing is linked to it.
+      </p>
     );
   }
 
   const empty = rules !== undefined && rules.length === 0;
-  const shown = rules?.slice(0, VISIBLE_CHIPS) ?? [];
-  const more = (rules?.length ?? 0) - shown.length;
 
   return (
     <div className="flex flex-wrap items-center gap-1.5">
-      {shown.map((rule) => (
+      {rules?.map((rule) => (
         <span
           key={rule.id}
-          title={rule.value}
-          className="inline-flex h-6 max-w-48 items-center gap-1.5 rounded-lg bg-raised px-2 text-xs font-medium shadow-module"
+          title={rule.kind === "package" ? `Store / Game Pass package ${rule.value}` : rule.value}
+          className="inline-flex h-7 max-w-56 items-center gap-1.5 rounded-lg bg-raised pr-1 pl-2 text-xs font-medium shadow-module"
         >
           <Gamepad2 className="size-3.5 shrink-0 text-accent" />
           <span className="truncate">{rule.displayName}</span>
+          <button
+            type="button"
+            aria-label={`Unlink ${rule.displayName}`}
+            onClick={async () => {
+              try {
+                await remove(rule);
+                toast.success(`Unlinked ${rule.displayName}.`);
+              } catch (e) {
+                toast.error(errorMessage(e));
+              }
+            }}
+            className="grid size-5 place-items-center rounded-md text-subtle hover:bg-hover hover:text-danger"
+          >
+            <X className="size-3" />
+          </button>
         </span>
       ))}
-      {more > 0 && <span className="text-xs text-subtle">+{more} more</span>}
       <button
         type="button"
         onClick={() => setOpen(true)}
         className={cn(
-          "inline-flex h-6 items-center gap-1 rounded-lg px-2 text-xs font-semibold transition-colors",
+          "inline-flex h-7 items-center gap-1 rounded-lg px-2 text-xs font-semibold transition-colors",
           empty
             ? "border border-dashed border-accent-line text-accent hover:bg-accent-soft"
             : "text-muted hover:bg-hover hover:text-fg",

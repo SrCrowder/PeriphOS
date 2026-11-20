@@ -102,7 +102,9 @@ export function DeviceSettingsPanel({ device }: { device: DeviceInfo }) {
         }
       } else {
         toast.error(
-          `${device.name} accepted the change but still reports a different value. A profile stored in the device may be in control.`,
+          change.type === "onboardProfile"
+            ? `${device.name} did not switch to ${describe(change)}. Make sure Wootility is closed and its App Linking is off, then try again.`
+            : `${device.name} accepted the change but still reports a different value. A profile stored in the device may be in control.`,
         );
       }
     } catch (e) {
