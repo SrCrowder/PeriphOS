@@ -100,6 +100,8 @@ what exists today. Legend: ✅ implemented, 🟡 partially implemented, ⏳ plan
 - ⏳ **Taskbar readout**: a compact, always-visible text next to the tray (for example battery
   levels and the active profile), in the spirit of TraySense
 - ⏳ Profile import/export and full backup/restore
+- ⏳ Languages: choose the app language in Settings (English first, Spanish next; translations
+  contributed by the community)
 - ⏳ Appearance selector: interface styles (Graphite, Stage, Mono) and logo marks besides the default Tactile style and Dial logo
 - ⏳ Community driver/extension model
 - ⏳ Linux builds and packaging as a first-class target
