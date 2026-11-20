@@ -106,6 +106,8 @@ what exists today. Legend: ✅ implemented, 🟡 partially implemented, ⏳ plan
   contributed by the community)
 - ⏳ Appearance selector: interface styles (Graphite, Stage, Mono) and logo marks besides the default Tactile style and Dial logo
 - ⏳ Community driver/extension model
+- ⏳ **Game controllers**: battery level of wireless controllers (e.g. Xbox), and button
+  remapping and macros for controllers where possible
 - ⏳ **Report a device**: a button for devices that are unknown or not well supported, which
   prepares a report with what is needed to support the model (IDs, interfaces, descriptors),
   shown to the user before anything is sent
