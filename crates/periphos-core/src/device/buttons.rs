@@ -82,6 +82,30 @@ pub struct ButtonLayout {
     pub in_effect: bool,
     /// Device functions that can be assigned.
     pub special_functions: Vec<SpecialFunction>,
+    /// What each button did when the device left the factory, in button
+    /// order, when the device keeps that in its memory.
+    #[serde(default)]
+    pub factory_defaults: Option<Vec<ButtonAction>>,
+}
+
+/// One button and the action to give it.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ButtonAssignment {
+    pub index: u8,
+    pub action: ButtonAction,
+}
+
+/// Button assignments the user saved as their own defaults for a device.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ButtonDefaults {
+    pub device_id: String,
+    pub device_name: String,
+    /// In button order.
+    pub actions: Vec<ButtonAction>,
+    /// Unix timestamp in milliseconds.
+    pub updated_at: i64,
 }
 
 impl ButtonLayout {

@@ -18,7 +18,10 @@ mod info;
 mod manager;
 mod settings;
 
-pub use buttons::{ButtonAction, ButtonBinding, ButtonLayout, MouseButton, SpecialFunction};
+pub use buttons::{
+    ButtonAction, ButtonAssignment, ButtonBinding, ButtonDefaults, ButtonLayout, MouseButton,
+    SpecialFunction,
+};
 pub use capability::{Capability, CapabilityKind, SupportLevel};
 pub use driver::{DeviceDriver, DriverInfo, Platform};
 pub use info::{BatteryLevel, BatteryState, ChargingState, ConnectionType, DeviceInfo, DeviceKind};

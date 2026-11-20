@@ -169,7 +169,7 @@ fn button_names(model: &str, count: usize) -> Vec<String> {
         "Forward button",
         "Wheel tilt left",
         "Wheel tilt right",
-        "Button behind the wheel",
+        "Button below the wheel",
         "DPI up button",
         "DPI down button",
     ];
@@ -192,6 +192,8 @@ fn button_names(model: &str, count: usize) -> Vec<String> {
 pub struct Description {
     pub profile_format: u8,
     pub profile_count: u8,
+    /// Built-in, read-only profiles (the factory settings).
+    pub rom_profile_count: u8,
     pub button_count: u8,
     pub sector_size: u16,
 }
@@ -201,6 +203,7 @@ impl Description {
         (d.len() >= 9).then(|| Self {
             profile_format: d[1],
             profile_count: d[3],
+            rom_profile_count: d[4],
             button_count: d[5],
             sector_size: u16::from_be_bytes([d[7], d[8]]),
         })
@@ -325,23 +328,27 @@ fn read_active<T: Transport>(s: &mut Session<T>, dev: u8) -> Result<Option<Activ
     }))
 }
 
+/// Assignments of the first `count` buttons in a profile sector.
+fn decode_buttons(bytes: &[u8], count: usize) -> Vec<ButtonAction> {
+    (0..count)
+        .map(|i| {
+            let at = BUTTONS_OFFSET + i * 4;
+            decode_action([bytes[at], bytes[at + 1], bytes[at + 2], bytes[at + 3]])
+        })
+        .collect()
+}
+
 fn layout(profile: &ActiveProfile, model: &str) -> ButtonLayout {
     let count = profile.description.button_count as usize;
     let names = button_names(model, count);
-    let buttons = (0..count)
-        .map(|i| {
-            let at = BUTTONS_OFFSET + i * 4;
-            let raw = [
-                profile.bytes[at],
-                profile.bytes[at + 1],
-                profile.bytes[at + 2],
-                profile.bytes[at + 3],
-            ];
-            ButtonBinding {
-                index: i as u8,
-                name: names[i].clone(),
-                action: decode_action(raw),
-            }
+    let buttons = decode_buttons(&profile.bytes, count)
+        .into_iter()
+        .zip(names)
+        .enumerate()
+        .map(|(i, (action, name))| ButtonBinding {
+            index: i as u8,
+            name,
+            action,
         })
         .collect();
     ButtonLayout {
@@ -349,7 +356,26 @@ fn layout(profile: &ActiveProfile, model: &str) -> ButtonLayout {
         onboard_profile: Some(profile.number),
         in_effect: profile.onboard_mode,
         special_functions: assignable_specials(),
+        factory_defaults: None,
     }
+}
+
+/// First sector of the built-in profiles in read-only memory.
+const ROM_FIRST_SECTOR: u16 = 0x0101;
+
+/// Button assignments of the first built-in profile: the factory settings.
+/// `None` when they cannot be read or fail their integrity check.
+fn factory_defaults<T: Transport>(
+    s: &mut Session<T>,
+    dev: u8,
+    profile: &ActiveProfile,
+) -> Option<Vec<ButtonAction>> {
+    if profile.description.rom_profile_count == 0 {
+        return None;
+    }
+    let size = profile.description.sector_size as usize;
+    let bytes = read_sector(s, dev, profile.index, ROM_FIRST_SECTOR, size).ok()?;
+    crc_ok(&bytes).then(|| decode_buttons(&bytes, profile.description.button_count as usize))
 }
 
 /// Buttons of the active onboard profile, or `None` without onboard profiles.
@@ -358,29 +384,40 @@ pub fn read_buttons<T: Transport>(
     dev: u8,
     model: &str,
 ) -> Result<Option<ButtonLayout>, Error> {
-    Ok(read_active(s, dev)?.map(|p| layout(&p, model)))
+    let Some(profile) = read_active(s, dev)? else {
+        return Ok(None);
+    };
+    let mut layout = layout(&profile, model);
+    layout.factory_defaults = factory_defaults(s, dev, &profile);
+    Ok(Some(layout))
 }
 
-/// Stores `action` on button `button` of the active onboard profile and
-/// returns the layout read back from the device.
-pub fn set_button<T: Transport>(
+/// Stores the given assignments (button index, action) in the active
+/// onboard profile with a single write, and returns the layout read back.
+/// Assignments that cannot be stored (such as an unknown macro) are left as
+/// they are.
+pub fn set_buttons<T: Transport>(
     s: &mut Session<T>,
     dev: u8,
     model: &str,
-    button: u8,
-    action: &ButtonAction,
+    assignments: &[(u8, ButtonAction)],
 ) -> Result<ButtonLayout, Error> {
     let profile =
         read_active(s, dev)?.ok_or_else(|| unsupported("This device has no onboard profiles."))?;
-    if button >= profile.description.button_count {
-        return Err(unsupported("There is no such button on this device."));
-    }
-    let raw = encode_action(action)
-        .ok_or_else(|| unsupported("This action cannot be stored on the device."))?;
-
     let mut updated = profile.bytes.clone();
-    let at = BUTTONS_OFFSET + button as usize * 4;
-    updated[at..at + 4].copy_from_slice(&raw);
+    for (button, action) in assignments {
+        if *button >= profile.description.button_count {
+            return Err(unsupported("There is no such button on this device."));
+        }
+        let Some(raw) = encode_action(action) else {
+            if assignments.len() == 1 {
+                return Err(unsupported("This action cannot be stored on the device."));
+            }
+            continue;
+        };
+        let at = BUTTONS_OFFSET + *button as usize * 4;
+        updated[at..at + 4].copy_from_slice(&raw);
+    }
     seal(&mut updated);
     if !layout(
         &ActiveProfile {
@@ -395,37 +432,36 @@ pub fn set_button<T: Transport>(
             "At least one button must keep the left click, or the mouse could not click.",
         ));
     }
-    if updated == profile.bytes {
-        return Ok(layout(&profile, model));
+    if updated != profile.bytes {
+        let size = updated.len();
+        write_sector(s, dev, profile.index, profile.sector, &updated)?;
+        let check = read_sector(s, dev, profile.index, profile.sector, size)?;
+        if check != updated {
+            // Put the previous contents back rather than leave a damaged profile.
+            let _ = write_sector(s, dev, profile.index, profile.sector, &profile.bytes);
+            return Err(unsupported(
+                "The mouse did not store the change correctly, so it was undone.",
+            ));
+        }
+        if profile.onboard_mode {
+            // Reload the profile so the new assignments are used right away.
+            // They are already stored, so a failure here is not an error: the
+            // mouse picks them up the next time it loads the profile.
+            let _ = s.call_feature(
+                dev,
+                profile.index,
+                FN_SET_CURRENT_PROFILE,
+                &[0, profile.number],
+            );
+        }
     }
-
-    let size = updated.len();
-    write_sector(s, dev, profile.index, profile.sector, &updated)?;
-    let check = read_sector(s, dev, profile.index, profile.sector, size)?;
-    if check != updated {
-        // Put the previous contents back rather than leave a damaged profile.
-        let _ = write_sector(s, dev, profile.index, profile.sector, &profile.bytes);
-        return Err(unsupported(
-            "The mouse did not store the change correctly, so it was undone.",
-        ));
-    }
-    if profile.onboard_mode {
-        // Reload the profile so the new assignment is used right away. The
-        // change is already stored, so a failure here is not an error: the
-        // mouse picks it up the next time it loads the profile.
-        let _ = s.call_feature(
-            dev,
-            profile.index,
-            FN_SET_CURRENT_PROFILE,
-            &[0, profile.number],
-        );
-    }
-    Ok(read_buttons(s, dev, model)?.unwrap_or_else(|| layout(&profile, model)))
+    read_buttons(s, dev, model)?.ok_or_else(|| unsupported("This device has no onboard profiles."))
 }
 
 #[cfg(test)]
 mod tests {
     use std::cell::RefCell;
+    use std::collections::HashMap;
     use std::rc::Rc;
     use std::time::Duration;
 
@@ -486,7 +522,7 @@ mod tests {
 
     /// A mouse with onboard profiles at feature index 5 whose memory is
     /// `memory` (sector → bytes), writable like the real thing.
-    fn mouse(memory: Rc<RefCell<Vec<Vec<u8>>>>, mode: u8) -> FakeTransport {
+    fn mouse(memory: Memory, mode: u8) -> FakeTransport {
         let mut pending: Option<(u16, Vec<u8>, usize)> = None;
         FakeTransport::new(move |req| {
             let (dev, sub, addr) = (req[1], req[2], req[3]);
@@ -501,9 +537,9 @@ mod tests {
                 (5, 3) => vec![],
                 (5, 4) => vec![0, 1],
                 (5, 5) => {
-                    let sector = u16::from_be_bytes([p[0], p[1]]) as usize;
+                    let sector = u16::from_be_bytes([p[0], p[1]]);
                     let offset = u16::from_be_bytes([p[2], p[3]]) as usize;
-                    memory.borrow()[sector][offset..offset + 16].to_vec()
+                    memory.borrow()[&sector][offset..offset + 16].to_vec()
                 }
                 (5, 6) => {
                     let sector = u16::from_be_bytes([p[0], p[1]]);
@@ -520,7 +556,7 @@ mod tests {
                 (5, 8) => {
                     if let Some((sector, mut data, len)) = pending.take() {
                         data.truncate(len);
-                        memory.borrow_mut()[sector as usize] = data;
+                        memory.borrow_mut().insert(sector, data);
                     }
                     vec![]
                 }
@@ -530,8 +566,19 @@ mod tests {
         })
     }
 
-    fn memory() -> Rc<RefCell<Vec<Vec<u8>>>> {
-        Rc::new(RefCell::new(vec![real_directory(), real_profile()]))
+    type Memory = Rc<RefCell<HashMap<u16, Vec<u8>>>>;
+
+    /// Directory, profile 1 and a factory profile whose back button is
+    /// "forward", so factory values are distinguishable.
+    fn memory() -> Memory {
+        let mut rom = real_profile();
+        rom[0x2E..0x30].copy_from_slice(&[0x00, 0x10]);
+        seal(&mut rom);
+        Rc::new(RefCell::new(HashMap::from([
+            (0x0000, real_directory()),
+            (0x0001, real_profile()),
+            (0x0101, rom),
+        ])))
     }
 
     #[test]
@@ -542,6 +589,13 @@ mod tests {
         assert!(layout.in_effect);
         assert_eq!(layout.buttons.len(), 11);
         assert_eq!(layout.buttons[3].name, "Back button");
+        let factory = layout.factory_defaults.unwrap();
+        assert_eq!(
+            factory[3],
+            ButtonAction::Mouse {
+                button: MouseButton::Forward
+            }
+        );
         assert_eq!(
             layout.buttons[4].action,
             ButtonAction::Special {
@@ -559,15 +613,15 @@ mod tests {
     #[test]
     fn changes_one_button_and_keeps_everything_else() {
         let mem = memory();
-        let before = mem.borrow()[1].clone();
+        let before = mem.borrow()[&1].clone();
         let mut s = Session::new(mouse(mem.clone(), 1), Duration::from_millis(50));
         let action = ButtonAction::Key {
             key: 0x2C,
             modifiers: 0,
         };
-        let layout = set_button(&mut s, 1, "G502 X PLUS", 4, &action).unwrap();
+        let layout = set_buttons(&mut s, 1, "G502 X PLUS", &[(4, action.clone())]).unwrap();
         assert_eq!(layout.buttons[4].action, action);
-        let after = mem.borrow()[1].clone();
+        let after = mem.borrow()[&1].clone();
         assert!(crc_ok(&after));
         let changed: Vec<usize> = (0..after.len())
             .filter(|&i| after[i] != before[i])
@@ -584,14 +638,15 @@ mod tests {
     #[test]
     fn refuses_to_remove_the_last_left_click() {
         let mut s = Session::new(mouse(memory(), 1), Duration::from_millis(50));
-        let err = set_button(&mut s, 1, "G502 X PLUS", 0, &ButtonAction::Disabled).unwrap_err();
+        let err =
+            set_buttons(&mut s, 1, "G502 X PLUS", &[(0, ButtonAction::Disabled)]).unwrap_err();
         assert!(matches!(err, Error::Io(m) if m.contains("left click")));
     }
 
     #[test]
     fn refuses_a_damaged_profile() {
         let mem = memory();
-        mem.borrow_mut()[1][0x22] ^= 0xFF;
+        mem.borrow_mut().get_mut(&1).unwrap()[0x22] ^= 0xFF;
         let mut s = Session::new(mouse(mem, 1), Duration::from_millis(50));
         assert!(read_buttons(&mut s, 1, "G502 X PLUS").is_err());
     }

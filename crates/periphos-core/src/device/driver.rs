@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use super::buttons::{ButtonAction, ButtonLayout};
+use super::buttons::{ButtonAssignment, ButtonLayout};
 use super::info::DeviceInfo;
 use super::settings::{DeviceSettings, SettingChange};
 use crate::{CoreError, CoreResult};
@@ -85,12 +85,11 @@ pub trait DeviceDriver: Send + Sync {
         ))
     }
 
-    /// Assigns `action` to button `index` and returns the layout read back.
-    fn set_button(
+    /// Applies the assignments together and returns the layout read back.
+    fn set_buttons(
         &self,
         _device_id: &str,
-        _index: u8,
-        _action: ButtonAction,
+        _assignments: &[ButtonAssignment],
     ) -> CoreResult<ButtonLayout> {
         Err(CoreError::Unsupported(
             "this device's buttons cannot be changed yet".into(),
