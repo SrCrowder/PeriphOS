@@ -21,6 +21,8 @@ export interface AppSettings {
   batteryWarningPercent: number;
   /** Always below the warning level. */
   batteryCriticalPercent: number;
+  /** One tray icon per wireless device showing its battery level. */
+  batteryInTray: boolean;
 }
 
 export const DEFAULT_SETTINGS: AppSettings = {
@@ -33,4 +35,5 @@ export const DEFAULT_SETTINGS: AppSettings = {
   batteryAlerts: true,
   batteryWarningPercent: 20,
   batteryCriticalPercent: 10,
+  batteryInTray: true,
 };

@@ -66,7 +66,24 @@ export function BatteryAlertsPanel() {
   };
 
   return (
-    <Panel title="Battery alerts">
+    <Panel title="Battery">
+      <SettingRow
+        title="Show battery levels in the system tray"
+        description={
+          <>
+            One icon per wireless device with its charge. Windows may first place new icons in the
+            hidden-icons area (^): drag them onto the taskbar, or turn them on in Settings &gt;
+            Personalization &gt; Taskbar &gt; Other system tray icons.
+          </>
+        }
+        control={
+          <Switch
+            label="Show battery levels in the system tray"
+            checked={settings.batteryInTray}
+            onChange={(batteryInTray) => void update({ batteryInTray })}
+          />
+        }
+      />
       <SettingRow
         title="Notify when a battery runs low"
         description="Wireless devices whose battery PeriphOS can read. Each alert is sent once until the device charges."

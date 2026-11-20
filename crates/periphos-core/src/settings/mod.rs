@@ -54,6 +54,8 @@ pub struct AppSettings {
     pub battery_warning_percent: u8,
     /// Second, more urgent alert, in percent. Kept below the warning level.
     pub battery_critical_percent: u8,
+    /// One tray icon per wireless device showing its battery level.
+    pub battery_in_tray: bool,
 }
 
 impl AppSettings {
@@ -79,6 +81,7 @@ impl Default for AppSettings {
             battery_alerts: true,
             battery_warning_percent: 20,
             battery_critical_percent: 10,
+            battery_in_tray: true,
         }
     }
 }

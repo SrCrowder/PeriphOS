@@ -60,6 +60,7 @@ mod tests {
             battery_alerts: false,
             battery_warning_percent: 25,
             battery_critical_percent: 5,
+            battery_in_tray: false,
         };
         s.save_settings(&custom).unwrap();
         assert_eq!(s.load_settings().unwrap(), custom);
