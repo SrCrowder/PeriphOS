@@ -215,7 +215,8 @@ export function DeviceSettingsPanel({ device }: { device: DeviceInfo }) {
                 <p className="text-sm font-semibold">Keyboard profile</p>
                 <p className="text-[13px] text-muted">
                   Profile {state.settings.onboardProfile.current + 1} of {state.settings.onboardProfile.count} is
-                  active on the keyboard.
+                  active on the keyboard. A profile you have not set up in Wootility keeps its default
+                  settings.
                 </p>
               </div>
               <SegmentedControl
