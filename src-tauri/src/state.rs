@@ -1,7 +1,7 @@
 use std::path::PathBuf;
 use std::sync::{Mutex, MutexGuard};
 
-use periphos_core::device::DeviceManager;
+use periphos_core::device::{DeviceInfo, DeviceManager};
 use periphos_core::CoreError;
 use periphos_storage::Storage;
 
@@ -29,6 +29,8 @@ pub struct ActiveState {
 pub struct AppState {
     storage: Mutex<Storage>,
     active: Mutex<ActiveState>,
+    /// Devices from the latest scan, for the tray menu.
+    last_devices: Mutex<Vec<DeviceInfo>>,
     pub devices: DeviceManager,
     pub database_path: PathBuf,
 }
@@ -47,6 +49,7 @@ impl AppState {
         Ok(Self {
             storage: Mutex::new(storage),
             active: Mutex::new(ActiveState::default()),
+            last_devices: Mutex::new(Vec::new()),
             devices,
             database_path,
         })
@@ -65,6 +68,19 @@ impl AppState {
             .lock()
             .map_err(|_| CoreError::Storage("profile state lock was poisoned".into()))? = state;
         Ok(())
+    }
+
+    pub fn last_devices(&self) -> Vec<DeviceInfo> {
+        self.last_devices
+            .lock()
+            .map(|d| d.clone())
+            .unwrap_or_default()
+    }
+
+    pub fn set_last_devices(&self, devices: Vec<DeviceInfo>) {
+        if let Ok(mut d) = self.last_devices.lock() {
+            *d = devices;
+        }
     }
 
     pub fn storage(&self) -> Result<MutexGuard<'_, Storage>, CoreError> {

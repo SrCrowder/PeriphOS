@@ -205,3 +205,30 @@ pub fn on_devices_connected(app: &AppHandle, state: &AppState, connected: &[Devi
         let _ = app.emit(PROFILE_APPLIED_EVENT, &report);
     }
 }
+
+/// Returns to automatic switching, starting from the current foreground app,
+/// or the default profile when nothing can be followed.
+pub fn resume_automatic(app: &AppHandle, state: &AppState) -> CoreResult<ActiveProfileInfo> {
+    let current = state.active()?;
+    state.set_active(ActiveState {
+        mode: SwitchMode::Automatic,
+        matched_app: None,
+        ..current
+    })?;
+    match periphos_apps::foreground_app() {
+        Some(foreground) => follow_foreground(app, state, &foreground)?,
+        None => {
+            let default = default_profile(state)?;
+            switch_to(
+                app,
+                state,
+                default,
+                SwitchMode::Automatic,
+                None,
+                ApplyReason::AppSwitched,
+            )?;
+        }
+    }
+    crate::tray::refresh(app);
+    active_info(state)
+}

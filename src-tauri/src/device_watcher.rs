@@ -44,6 +44,8 @@ pub fn spawn(app: AppHandle) {
                         profile_runtime::on_devices_connected(&app, &state, &connected);
                     }
                     notify_low_batteries(&app, &state, &mut battery_alerts, &overview.devices);
+                    state.set_last_devices(overview.devices.clone());
+                    crate::tray::refresh(&app);
                     last = Some(overview);
                 }
                 thread::sleep(POLL_INTERVAL);

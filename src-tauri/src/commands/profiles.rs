@@ -14,21 +14,30 @@ pub fn list_profiles(state: State<'_, AppState>) -> IpcResult<Vec<Profile>> {
 }
 
 #[tauri::command]
-pub fn create_profile(state: State<'_, AppState>, draft: ProfileDraft) -> IpcResult<Profile> {
-    Ok(state.storage()?.create_profile(draft)?)
+pub fn create_profile(
+    app: AppHandle,
+    state: State<'_, AppState>,
+    draft: ProfileDraft,
+) -> IpcResult<Profile> {
+    let profile = state.storage()?.create_profile(draft)?;
+    crate::tray::refresh(&app);
+    Ok(profile)
 }
 
 #[tauri::command]
 pub fn update_profile(
+    app: AppHandle,
     state: State<'_, AppState>,
     id: String,
     draft: ProfileDraft,
 ) -> IpcResult<Profile> {
-    Ok(state.storage()?.update_profile(&id, draft)?)
+    let profile = state.storage()?.update_profile(&id, draft)?;
+    crate::tray::refresh(&app);
+    Ok(profile)
 }
 
 #[tauri::command]
-pub fn delete_profile(state: State<'_, AppState>, id: String) -> IpcResult<()> {
+pub fn delete_profile(app: AppHandle, state: State<'_, AppState>, id: String) -> IpcResult<()> {
     state.storage()?.delete_profile(&id)?;
     // Deleting the active profile falls back to the default one.
     let active = state.active()?;
@@ -39,6 +48,7 @@ pub fn delete_profile(state: State<'_, AppState>, id: String) -> IpcResult<()> {
             ..active
         })?;
     }
+    crate::tray::refresh(&app);
     Ok(())
 }
 
@@ -74,33 +84,7 @@ pub async fn activate_profile(app: AppHandle, id: String) -> IpcResult<Activatio
 #[tauri::command]
 pub async fn resume_automatic_switching(app: AppHandle) -> IpcResult<ActiveProfileInfo> {
     blocking(app.clone(), move |state| {
-        let current = state.active()?;
-        state.set_active(ActiveState {
-            mode: SwitchMode::Automatic,
-            matched_app: None,
-            ..current
-        })?;
-        match periphos_apps::foreground_app() {
-            Some(foreground) => profile_runtime::follow_foreground(&app, state, &foreground)?,
-            None => {
-                // Nothing to follow (e.g. PeriphOS itself is in front): use the default profile.
-                let default = state
-                    .storage()?
-                    .list_profiles()?
-                    .into_iter()
-                    .find(|p| p.is_default)
-                    .ok_or_else(|| CoreError::Storage("no default profile".into()))?;
-                profile_runtime::switch_to(
-                    &app,
-                    state,
-                    default,
-                    SwitchMode::Automatic,
-                    None,
-                    ApplyReason::AppSwitched,
-                )?;
-            }
-        }
-        profile_runtime::active_info(state)
+        profile_runtime::resume_automatic(&app, state)
     })
     .await
 }
