@@ -22,12 +22,26 @@ export interface MouseDiagram {
   /** Physical buttons drawn on the body, highlighted with their label. */
   parts: { index: number; shape: string }[];
   buttons: DiagramButton[];
+  /** Controls shown for completeness that cannot be assigned yet. */
+  fixed: FixedControl[];
+}
+
+export interface FixedControl {
+  name: string;
+  /** Why it cannot be assigned. */
+  note: string;
+  anchor: [number, number];
+  side: "left" | "right";
+  cardY: number;
 }
 
 export const VIEW_WIDTH = 1000;
 export const VIEW_HEIGHT = 620;
 /** Width of a label card column, in view-box units. */
 export const CARD_WIDTH = 270;
+
+const WHEEL_NOTE =
+  "Turning the wheel is not stored in the mouse. Changing it needs PeriphOS to remap it while running, which is planned.";
 
 const g502x: MouseDiagram = {
   body: `M 440 70 C 455 52 485 48 498 50 L 502 50 C 520 48 556 52 576 66
@@ -66,10 +80,14 @@ const g502x: MouseDiagram = {
     { index: 5, anchor: [389, 268], side: "left", cardY: 390 },
     { index: 3, anchor: [389, 318], side: "left", cardY: 470 },
     { index: 4, anchor: [364, 392], side: "left", cardY: 550 },
-    { index: 2, anchor: [500, 100], side: "right", cardY: 90 },
-    { index: 7, anchor: [513, 128], side: "right", cardY: 190 },
-    { index: 1, anchor: [565, 230], side: "right", cardY: 290 },
-    { index: 8, anchor: [500, 222], side: "right", cardY: 390 },
+    { index: 2, anchor: [500, 104], side: "right", cardY: 146 },
+    { index: 7, anchor: [513, 128], side: "right", cardY: 228 },
+    { index: 1, anchor: [565, 230], side: "right", cardY: 392 },
+    { index: 8, anchor: [500, 222], side: "right", cardY: 474 },
+  ],
+  fixed: [
+    { name: "Scroll up", note: WHEEL_NOTE, anchor: [500, 90], side: "right", cardY: 64 },
+    { name: "Scroll down", note: WHEEL_NOTE, anchor: [500, 168], side: "right", cardY: 310 },
   ],
 };
 

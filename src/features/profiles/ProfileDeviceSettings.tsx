@@ -16,6 +16,7 @@ export function describeSaved(s: DeviceProfileSettings): string {
     s.onboardProfile != null ? `keyboard profile ${s.onboardProfile + 1}` : null,
     s.dpi !== null ? `${number.format(s.dpi)} DPI` : null,
     s.reportRateHz !== null ? `${number.format(s.reportRateHz)} Hz` : null,
+    s.buttons ? "own button assignments" : null,
   ]
     .filter(Boolean)
     .join(", ");

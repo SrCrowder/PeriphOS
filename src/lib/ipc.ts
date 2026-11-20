@@ -58,6 +58,10 @@ export interface Commands {
     result: DeviceProfileSettings;
   };
   delete_profile_device_settings: { args: { profileId: string; deviceId: string }; result: null };
+  save_profile_buttons: {
+    args: { profileId: string; deviceId: string; deviceName: string; buttons: ButtonAction[] | null };
+    result: DeviceProfileSettings | null;
+  };
   get_settings: { args: undefined; result: AppSettings };
   update_settings: { args: { settings: AppSettings }; result: AppSettings };
   get_launch_at_startup: { args: undefined; result: boolean };
@@ -119,6 +123,8 @@ export const api = {
   profileDeviceSettings: (profileId: string) => call("list_profile_device_settings", { profileId }),
   saveDeviceSettingsToProfile: (profileId: string, deviceId: string) =>
     call("save_device_settings_to_profile", { profileId, deviceId }),
+  saveProfileButtons: (profileId: string, deviceId: string, deviceName: string, buttons: ButtonAction[] | null) =>
+    call("save_profile_buttons", { profileId, deviceId, deviceName, buttons }),
   deleteProfileDeviceSettings: (profileId: string, deviceId: string) =>
     call("delete_profile_device_settings", { profileId, deviceId }),
   getSettings: () => call("get_settings"),

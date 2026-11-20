@@ -1,11 +1,12 @@
 import { Bookmark, Factory, Keyboard, RefreshCw, RotateCcw, TriangleAlert } from "lucide-react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { Button, ConfirmDialog, Dialog, Panel, Spinner } from "@/components/ui";
 import { toIpcError } from "@/lib/errors";
-import { MEDIA_KEYS, modifiersOf, shortcutLabel, usageForCode } from "@/lib/hidKeys";
+import { loadKeyboardLayout, MEDIA_KEYS, modifiersOf, shortcutLabel, usageForCode } from "@/lib/hidKeys";
 import { api } from "@/lib/ipc";
 import { cn } from "@/lib/cn";
+import { selectActiveProfile, useProfiles } from "@/stores/profiles";
 import { toast } from "@/stores/toasts";
 import type { ButtonAction, ButtonBinding, ButtonDefaults, ButtonLayout, MouseButton } from "@/types/buttons";
 import type { DeviceInfo } from "@/types/device";
@@ -32,9 +33,12 @@ export function ButtonsPanel({ device }: { device: DeviceInfo }) {
   const [editing, setEditing] = useState<ButtonBinding | null>(null);
   const [restoring, setRestoring] = useState<Restore | null>(null);
   const [saving, setSaving] = useState(false);
+  const activeProfile = useProfiles(selectActiveProfile);
+  /** Whether the active profile has its own assignments for this device. */
+  const [ownButtons, setOwnButtons] = useState(false);
 
-  const load = useCallback(async () => {
-    setState({ status: "loading" });
+  const load = useCallback(async (quiet = false) => {
+    if (!quiet) setState({ status: "loading" });
     try {
       setState({ status: "ready", layout: await api.deviceButtons(device.id) });
     } catch (e) {
@@ -47,11 +51,39 @@ export function ButtonsPanel({ device }: { device: DeviceInfo }) {
     } catch {
       setDefaults(null);
     }
+    const profile = selectActiveProfile(useProfiles.getState());
+    if (profile) {
+      try {
+        const saved = await api.profileDeviceSettings(profile.id);
+        setOwnButtons(saved.some((e) => e.deviceId === device.id && e.buttons !== null));
+      } catch {
+        setOwnButtons(false);
+      }
+    }
   }, [device.id]);
 
   useEffect(() => {
     void load();
   }, [load]);
+
+  // Another profile was applied: the mouse may now have other assignments.
+  const appliedRevision = useProfiles((s) => s.appliedRevision);
+  const firstRevision = useRef(appliedRevision);
+  useEffect(() => {
+    if (appliedRevision !== firstRevision.current) void load(true);
+  }, [appliedRevision, load]);
+
+  /** Stores the buttons in the active profile; `null` makes it follow the defaults. */
+  const saveToProfile = async (buttons: ButtonAction[] | null) => {
+    const profile = selectActiveProfile(useProfiles.getState());
+    if (!profile) return;
+    try {
+      await api.saveProfileButtons(profile.id, device.id, device.name, buttons);
+      setOwnButtons(buttons !== null);
+    } catch (e) {
+      toast.error(`The buttons were changed on the mouse but not saved to "${profile.name}": ${toIpcError(e).message}`);
+    }
+  };
 
   const layout = state.status === "ready" ? state.layout : null;
   const diagram = layout ? diagramFor(device.name, layout.buttons.length) : null;
@@ -66,9 +98,13 @@ export function ButtonsPanel({ device }: { device: DeviceInfo }) {
   }, [layout]);
 
   /** Writes the assignments; returns whether all of them were kept. */
-  const write = async (assignments: { index: number; action: ButtonAction }[]): Promise<boolean> => {
+  const write = async (
+    assignments: { index: number; action: ButtonAction }[],
+    followDefaults = false,
+  ): Promise<boolean> => {
     const next = await api.setDeviceButtons(device.id, assignments);
     setState({ status: "ready", layout: next });
+    await saveToProfile(followDefaults ? null : next.buttons.map((b) => b.action));
     return assignments.every(
       ({ index, action }) => action.type === "other" || (next.buttons[index] && sameAction(next.buttons[index].action, action)),
     );
@@ -91,7 +127,10 @@ export function ButtonsPanel({ device }: { device: DeviceInfo }) {
   const restore = async (which: Restore) => {
     const actions = which === "factory" ? layout?.factoryDefaults : defaults?.actions;
     if (!actions) return;
-    const kept = await write(actions.map((action, index) => ({ index, action })));
+    const kept = await write(
+      actions.map((action, index) => ({ index, action })),
+      which === "mine",
+    );
     if (!kept) throw new Error(`${device.name} did not keep every assignment. Read the buttons again to see what it has now.`);
     toast.success(which === "factory" ? "Factory button settings restored." : "Your default buttons restored.");
   };
@@ -101,7 +140,9 @@ export function ButtonsPanel({ device }: { device: DeviceInfo }) {
     setSaving(true);
     try {
       setDefaults(await api.saveButtonDefaults(device.id, device.name, layout.buttons.map((b) => b.action)));
-      toast.success(`Saved as the default buttons for ${device.name}.`);
+      // The active profile now matches the defaults: let it follow them.
+      await saveToProfile(null);
+      toast.success(`Saved as the default buttons for ${device.name}. Profiles without their own buttons use them.`);
     } catch (e) {
       toast.error(toIpcError(e).message);
     } finally {
@@ -115,14 +156,17 @@ export function ButtonsPanel({ device }: { device: DeviceInfo }) {
     <Panel
       title="Buttons"
       description={
-        layout?.onboardProfile != null ? (
-          <>
-            Stored in the mouse&apos;s memory (onboard profile {layout.onboardProfile}), so they work without
-            PeriphOS and on any computer. They are the same in every PeriphOS profile for now.
-          </>
-        ) : (
-          "Read from the device."
-        )
+        <>
+          Changes are saved to the active profile,{" "}
+          <span className="font-semibold text-fg">{activeProfile?.name ?? "…"}</span>, and stored in the mouse
+          {layout?.onboardProfile != null ? ` (onboard profile ${layout.onboardProfile})` : ""}, so they keep
+          working without PeriphOS.{" "}
+          {ownButtons
+            ? "This profile has its own buttons."
+            : defaults
+              ? "This profile uses your default buttons."
+              : "Profiles without their own buttons use your defaults, once you save them."}
+        </>
       }
       actions={
         <Button
@@ -217,8 +261,8 @@ export function ButtonsPanel({ device }: { device: DeviceInfo }) {
             </Button>
             <p className="basis-full text-[12px] text-subtle">
               {defaults
-                ? `Your defaults for this device were saved on ${new Date(defaults.updatedAt).toLocaleDateString()}.`
-                : "Save the current buttons as your defaults to come back to them later."}
+                ? `Your defaults were saved on ${new Date(defaults.updatedAt).toLocaleDateString()}. New profiles, and profiles without their own buttons, use them.`
+                : "Your defaults are used by new profiles and by every profile without its own buttons."}
             </p>
           </div>
         </div>
@@ -301,6 +345,11 @@ function AssignDialog({
 }) {
   const [choice, setChoice] = useState<ButtonAction>(binding.action);
   const [capturing, setCapturing] = useState(false);
+  // The keyboard layout may have changed since it was read: key names follow it.
+  const [, setLayoutRead] = useState(0);
+  useEffect(() => {
+    void loadKeyboardLayout().then(() => setLayoutRead((n) => n + 1));
+  }, []);
   const pick = (action: ButtonAction) => {
     setCapturing(false);
     setChoice(action);

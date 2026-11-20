@@ -65,6 +65,31 @@ for (let i = 1; i <= 12; i++) CODES[`F${i}`] = [0x39 + i, `F${i}`];
 for (let i = 13; i <= 24; i++) CODES[`F${i}`] = [0x68 + i - 13, `F${i}`];
 
 const LABELS = new Map<number, string>(Object.values(CODES).map(([usage, label]) => [usage, label]));
+const CODE_OF = new Map<number, string>(Object.entries(CODES).map(([code, [usage]]) => [usage, code]));
+
+/**
+ * Characters printed on the user's keyboard, by KeyboardEvent.code (for a
+ * Spanish layout, Semicolon is "ñ"). From the Keyboard Map API, available in
+ * WebView2 (Windows); elsewhere the US names above are used.
+ */
+let layout: Map<string, string> | null = null;
+
+interface KeyboardLayoutApi {
+  getLayoutMap(): Promise<Map<string, string>>;
+}
+
+/** Reads the keyboard layout. Call again when the layout may have changed. */
+export async function loadKeyboardLayout(): Promise<void> {
+  const keyboard = (navigator as Navigator & { keyboard?: KeyboardLayoutApi }).keyboard;
+  if (!keyboard?.getLayoutMap) return;
+  try {
+    layout = new Map(await keyboard.getLayoutMap());
+  } catch {
+    layout = null;
+  }
+}
+
+void loadKeyboardLayout();
 
 /** Modifier bits, as stored with a key. */
 export const MODIFIERS = [
@@ -80,6 +105,10 @@ export function usageForCode(code: string): number | null {
 }
 
 export function keyLabel(usage: number): string {
+  const code = CODE_OF.get(usage);
+  // Only printable keys differ between layouts; named keys keep their names.
+  const printed = code && !code.startsWith("Numpad") ? layout?.get(code) : undefined;
+  if (printed && printed.trim().length === 1) return printed.toLocaleUpperCase();
   return LABELS.get(usage) ?? `Key 0x${usage.toString(16).toUpperCase().padStart(2, "0")}`;
 }
 

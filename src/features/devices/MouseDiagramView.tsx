@@ -58,6 +58,22 @@ export function MouseDiagramView({
             strokeWidth={1.5}
           />
         ))}
+        {diagram.fixed.map((f) => {
+          const [x1, y1] = cardEdge(f.side, f.cardY);
+          const bend = f.side === "left" ? x1 + 24 : x1 - 24;
+          return (
+            <g key={f.name} className="text-line">
+              <polyline
+                points={`${x1},${y1} ${bend},${y1} ${f.anchor[0]},${f.anchor[1]}`}
+                fill="none"
+                stroke="currentColor"
+                strokeWidth={1.25}
+                strokeDasharray="4 4"
+              />
+              <circle cx={f.anchor[0]} cy={f.anchor[1]} r={3.5} fill="currentColor" />
+            </g>
+          );
+        })}
         {diagram.buttons.map((b) => {
           const [x1, y1] = cardEdge(b.side, b.cardY);
           const [x2, y2] = b.anchor;
@@ -77,6 +93,24 @@ export function MouseDiagramView({
         })}
       </svg>
 
+      {diagram.fixed.map((f) => (
+        <div
+          key={f.name}
+          title={f.note}
+          style={{
+            top: `${(f.cardY / VIEW_HEIGHT) * 100}%`,
+            width: `${(CARD_WIDTH / VIEW_WIDTH) * 100}%`,
+            [f.side === "left" ? "left" : "right"]: 0,
+          }}
+          className={cn(
+            "absolute -translate-y-1/2 cursor-help rounded-xl border border-dashed border-line px-3 py-1.5",
+            f.side === "left" ? "text-right" : "text-left",
+          )}
+        >
+          <span className="block truncate text-[12px] text-subtle">{f.name}</span>
+          <span className="block truncate text-[13px] font-semibold text-subtle">Not configurable yet</span>
+        </div>
+      ))}
       {diagram.buttons.map((b) => {
         const binding = byIndex.get(b.index);
         if (!binding) return null;

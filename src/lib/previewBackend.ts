@@ -200,9 +200,32 @@ const handlers: { [C in CommandName]: (args: Commands[C]["args"]) => Commands[C]
       dpi: live.dpi?.current ?? null,
       reportRateHz: live.reportRate?.currentHz ?? null,
       onboardProfile: live.onboardProfile?.current ?? null,
+      buttons:
+        deviceSettings.find((s) => s.profileId === profileId && s.deviceId === deviceId)?.buttons ?? null,
       updatedAt: Date.now(),
     };
     deviceSettings = [...deviceSettings.filter((s) => !(s.profileId === profileId && s.deviceId === deviceId)), entry];
+    const { profileId: _, ...saved } = entry;
+    return saved;
+  },
+  save_profile_buttons: ({ profileId, deviceId, deviceName, buttons }) => {
+    find(profileId);
+    const existing = deviceSettings.find((s) => s.profileId === profileId && s.deviceId === deviceId);
+    const entry = {
+      profileId,
+      deviceId,
+      deviceName,
+      dpi: existing?.dpi ?? null,
+      reportRateHz: existing?.reportRateHz ?? null,
+      onboardProfile: existing?.onboardProfile ?? null,
+      buttons: buttons ? structuredClone(buttons) : null,
+      updatedAt: Date.now(),
+    };
+    deviceSettings = deviceSettings.filter((s) => !(s.profileId === profileId && s.deviceId === deviceId));
+    if (entry.dpi === null && entry.reportRateHz === null && entry.onboardProfile === null && entry.buttons === null) {
+      return null;
+    }
+    deviceSettings = [...deviceSettings, entry];
     const { profileId: _, ...saved } = entry;
     return saved;
   },

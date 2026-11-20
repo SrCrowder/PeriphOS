@@ -1,3 +1,5 @@
+import type { ButtonAction } from "./buttons";
+
 // Mirrors crates/periphos-core/src/profile.
 
 export const PROFILE_NAME_MAX = 64;
@@ -27,6 +29,8 @@ export interface DeviceProfileSettings {
   reportRateHz: number | null;
   /** Zero-based onboard profile. */
   onboardProfile: number | null;
+  /** Button assignments for this profile; `null`: the device's saved defaults. */
+  buttons: ButtonAction[] | null;
   updatedAt: number;
 }
 
