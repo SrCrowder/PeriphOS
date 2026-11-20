@@ -78,6 +78,7 @@ pub fn run() {
             commands::profiles::list_installed_packages,
             commands::profiles::list_profile_device_settings,
             commands::profiles::save_device_settings_to_profile,
+            commands::profiles::save_profile_buttons,
             commands::profiles::delete_profile_device_settings,
             commands::settings::get_settings,
             commands::settings::update_settings,

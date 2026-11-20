@@ -7,7 +7,7 @@
 
 use serde::{Deserialize, Serialize};
 
-use crate::device::SettingChange;
+use crate::device::{ButtonAction, SettingChange};
 use crate::{CoreError, CoreResult};
 
 pub const NAME_MAX_LEN: usize = 64;
@@ -78,6 +78,10 @@ pub struct DeviceProfileSettings {
     /// Zero-based onboard profile to activate on the device.
     #[serde(default)]
     pub onboard_profile: Option<u8>,
+    /// Button assignments for this profile, in button order. `None`: the
+    /// device's own defaults (saved by the user) are used, if any.
+    #[serde(default)]
+    pub buttons: Option<Vec<ButtonAction>>,
     /// Unix timestamp in milliseconds.
     pub updated_at: i64,
 }
@@ -100,7 +104,10 @@ impl DeviceProfileSettings {
     }
 
     pub fn is_empty(&self) -> bool {
-        self.dpi.is_none() && self.report_rate_hz.is_none() && self.onboard_profile.is_none()
+        self.dpi.is_none()
+            && self.report_rate_hz.is_none()
+            && self.onboard_profile.is_none()
+            && self.buttons.is_none()
     }
 }
 
@@ -139,6 +146,7 @@ mod tests {
             dpi: Some(800),
             report_rate_hz: Some(1000),
             onboard_profile: Some(2),
+            buttons: None,
             updated_at: 0,
         };
         assert_eq!(

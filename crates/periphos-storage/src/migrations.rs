@@ -61,6 +61,10 @@ const MIGRATIONS: &[&str] = &[
         updated_at   INTEGER NOT NULL
     );
     "#,
+    // v6: button assignments per device in a profile.
+    r#"
+    ALTER TABLE profile_device_settings ADD COLUMN buttons_json TEXT;
+    "#,
 ];
 
 pub(crate) fn run(conn: &mut Connection) -> CoreResult<()> {

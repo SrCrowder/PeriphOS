@@ -12,6 +12,10 @@ fn from_row(row: &Row<'_>) -> rusqlite::Result<DeviceProfileSettings> {
         report_rate_hz: row.get(3)?,
         updated_at: row.get(4)?,
         onboard_profile: row.get(5)?,
+        // Unreadable (saved by a newer version): treated as not set.
+        buttons: row
+            .get::<_, Option<String>>(6)?
+            .and_then(|json| serde_json::from_str(&json).ok()),
     })
 }
 
@@ -24,7 +28,7 @@ impl Storage {
         let mut stmt = self
             .conn
             .prepare(
-                "SELECT device_id, device_name, dpi, report_rate_hz, updated_at, onboard_profile \
+                "SELECT device_id, device_name, dpi, report_rate_hz, updated_at, onboard_profile, buttons_json \
                  FROM profile_device_settings WHERE profile_id = ?1 ORDER BY device_name COLLATE NOCASE",
             )
             .map_err(to_core)?;
@@ -45,15 +49,21 @@ impl Storage {
             ));
         }
         let now = now_ms();
+        let buttons_json = match &settings.buttons {
+            Some(buttons) => Some(
+                serde_json::to_string(buttons).map_err(|e| CoreError::Storage(e.to_string()))?,
+            ),
+            None => None,
+        };
         self.conn
             .execute(
                 "INSERT INTO profile_device_settings \
-                 (profile_id, device_id, device_name, dpi, report_rate_hz, updated_at, onboard_profile) \
-                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7) \
+                 (profile_id, device_id, device_name, dpi, report_rate_hz, updated_at, onboard_profile, buttons_json) \
+                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8) \
                  ON CONFLICT(profile_id, device_id) DO UPDATE SET \
                  device_name = excluded.device_name, dpi = excluded.dpi, \
                  report_rate_hz = excluded.report_rate_hz, updated_at = excluded.updated_at, \
-                 onboard_profile = excluded.onboard_profile",
+                 onboard_profile = excluded.onboard_profile, buttons_json = excluded.buttons_json",
                 params![
                     profile_id,
                     settings.device_id,
@@ -61,7 +71,8 @@ impl Storage {
                     settings.dpi,
                     settings.report_rate_hz,
                     now,
-                    settings.onboard_profile
+                    settings.onboard_profile,
+                    buttons_json
                 ],
             )
             .map_err(to_core)?;
@@ -69,6 +80,18 @@ impl Storage {
             updated_at: now,
             ..settings.clone()
         })
+    }
+
+    /// One device's settings in a profile, if saved.
+    pub fn profile_device_entry(
+        &self,
+        profile_id: &str,
+        device_id: &str,
+    ) -> CoreResult<Option<DeviceProfileSettings>> {
+        Ok(self
+            .profile_device_settings(profile_id)?
+            .into_iter()
+            .find(|e| e.device_id == device_id))
     }
 
     pub fn delete_profile_device_settings(
@@ -99,6 +122,7 @@ mod tests {
             dpi: Some(dpi),
             report_rate_hz: Some(1000),
             onboard_profile: None,
+            buttons: None,
             updated_at: 0,
         }
     }
@@ -118,6 +142,7 @@ mod tests {
             dpi: None,
             report_rate_hz: None,
             onboard_profile: Some(2),
+            buttons: None,
             updated_at: 0,
         };
         s.save_profile_device_settings(&p.id, &keyboard).unwrap();
@@ -125,6 +150,37 @@ mod tests {
             s.profile_device_settings(&p.id).unwrap()[0].onboard_profile,
             Some(2)
         );
+    }
+
+    #[test]
+    fn buttons_round_trip() {
+        use periphos_core::device::{ButtonAction, MouseButton};
+        let s = Storage::open_in_memory().unwrap();
+        let p = s
+            .create_profile(ProfileDraft {
+                name: "FPS".into(),
+                description: None,
+            })
+            .unwrap();
+        let buttons = vec![
+            ButtonAction::Mouse {
+                button: MouseButton::Left,
+            },
+            ButtonAction::Disabled,
+        ];
+        let entry = DeviceProfileSettings {
+            buttons: Some(buttons.clone()),
+            dpi: None,
+            report_rate_hz: None,
+            ..mouse(800)
+        };
+        s.save_profile_device_settings(&p.id, &entry).unwrap();
+        let read = s
+            .profile_device_entry(&p.id, &entry.device_id)
+            .unwrap()
+            .unwrap();
+        assert_eq!(read.buttons, Some(buttons));
+        assert_eq!(read.dpi, None);
     }
 
     #[test]

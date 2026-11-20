@@ -1,4 +1,5 @@
 use periphos_core::apps::{AppIdentity, AppRule, AppRuleKind, InstalledPackage};
+use periphos_core::device::ButtonAction;
 use periphos_core::profile::{DeviceProfileSettings, Profile, ProfileDraft};
 use periphos_core::CoreError;
 use tauri::{AppHandle, State};
@@ -155,12 +156,18 @@ pub async fn save_device_settings_to_profile(
             .devices
             .driver_for(&device.id)?
             .read_settings(&device.id)?;
+        // Buttons are saved on their own (save_profile_buttons): keep them.
+        let buttons = state
+            .storage()?
+            .profile_device_entry(&profile_id, &device.id)?
+            .and_then(|e| e.buttons);
         let entry = DeviceProfileSettings {
             device_id: device.id,
             device_name: device.name,
             dpi: live.dpi.map(|d| d.current),
             report_rate_hz: live.report_rate.map(|r| r.current_hz),
             onboard_profile: live.onboard_profile.map(|p| p.current),
+            buttons,
             updated_at: 0,
         };
         state
@@ -168,6 +175,42 @@ pub async fn save_device_settings_to_profile(
             .save_profile_device_settings(&profile_id, &entry)
     })
     .await
+}
+
+/// Stores a device's button assignments in a profile. `None` makes the
+/// profile use the device's saved defaults again.
+#[tauri::command]
+pub fn save_profile_buttons(
+    state: State<'_, AppState>,
+    profile_id: String,
+    device_id: String,
+    device_name: String,
+    buttons: Option<Vec<ButtonAction>>,
+) -> IpcResult<Option<DeviceProfileSettings>> {
+    let storage = state.storage()?;
+    let entry = match storage.profile_device_entry(&profile_id, &device_id)? {
+        Some(existing) => DeviceProfileSettings {
+            device_name,
+            buttons,
+            ..existing
+        },
+        None => DeviceProfileSettings {
+            device_id: device_id.clone(),
+            device_name,
+            dpi: None,
+            report_rate_hz: None,
+            onboard_profile: None,
+            buttons,
+            updated_at: 0,
+        },
+    };
+    if entry.is_empty() {
+        storage.delete_profile_device_settings(&profile_id, &device_id)?;
+        return Ok(None);
+    }
+    Ok(Some(
+        storage.save_profile_device_settings(&profile_id, &entry)?,
+    ))
 }
 
 #[tauri::command]

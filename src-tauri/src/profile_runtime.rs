@@ -1,7 +1,7 @@
 //! The active profile, automatic switching, and applying device settings.
 
 use periphos_core::apps::{find_rule, AppIdentity};
-use periphos_core::device::DeviceInfo;
+use periphos_core::device::{ButtonAction, ButtonAssignment, DeviceInfo};
 use periphos_core::profile::Profile;
 use periphos_core::{CoreError, CoreResult};
 use serde::Serialize;
@@ -86,7 +86,8 @@ pub fn active_info(state: &AppState) -> CoreResult<ActiveProfileInfo> {
 }
 
 /// Applies `profile`'s saved settings to the connected devices in `devices`.
-/// Devices without saved settings are left untouched.
+/// Buttons come from the profile, or else from the device's saved defaults.
+/// Devices with nothing to apply are left untouched.
 pub fn apply_to_devices(
     state: &AppState,
     profile: &Profile,
@@ -94,15 +95,49 @@ pub fn apply_to_devices(
 ) -> CoreResult<Vec<DeviceApplyResult>> {
     let saved = state.storage()?.profile_device_settings(&profile.id)?;
     let mut results = Vec::new();
-    for entry in saved {
-        let Some(device) = devices.iter().find(|d| d.id == entry.device_id) else {
-            continue;
+    for device in devices {
+        let entry = saved.iter().find(|e| e.device_id == device.id);
+        let buttons = match entry.and_then(|e| e.buttons.clone()) {
+            Some(buttons) => Some(buttons),
+            None => state
+                .storage()?
+                .button_defaults(&device.id)?
+                .map(|d| d.actions),
         };
+        let changes = entry.map(|e| e.changes()).unwrap_or_default();
+        if changes.is_empty() && buttons.is_none() {
+            continue;
+        }
         let outcome = state.devices.driver_for(&device.id).and_then(|driver| {
             let mut all_took_effect = true;
-            for change in entry.changes() {
+            for change in changes {
                 let after = driver.apply_setting(&device.id, change)?;
                 all_took_effect &= change.took_effect(&after);
+            }
+            if let Some(buttons) = buttons {
+                let assignments: Vec<ButtonAssignment> = buttons
+                    .into_iter()
+                    .enumerate()
+                    .map(|(i, action)| ButtonAssignment {
+                        index: i as u8,
+                        action,
+                    })
+                    .collect();
+                // Only written when different from what the device has.
+                match driver.set_buttons(&device.id, &assignments) {
+                    Ok(layout) => {
+                        all_took_effect &= assignments.iter().all(|a| {
+                            matches!(a.action, ButtonAction::Other { .. })
+                                || layout
+                                    .buttons
+                                    .get(a.index as usize)
+                                    .is_some_and(|b| b.action == a.action)
+                        });
+                    }
+                    // A device without assignable buttons: nothing to do.
+                    Err(CoreError::Unsupported(_)) => {}
+                    Err(err) => return Err(err),
+                }
             }
             Ok(all_took_effect)
         });
