@@ -78,12 +78,15 @@ what exists today. Legend: ✅ implemented, 🟡 partially implemented, ⏳ plan
 - ⏳ Automatic switching on Linux (X11 first; Wayland needs desktop-specific support)
 - ⏳ Profiles shared by several devices
 - ✅ Keep running in the system tray when the window is closed (single instance)
-- ⏳ Launch at startup
+- ✅ Start when the user signs in, straight into the tray
 - ⏳ Show the active profile in the tray (optional)
 
 ## Phase 4: Input remapping and macros ⏳
 
 - ⏳ Action model (key, mouse button, media, shortcut, launch app, macro, disabled)
+- ⏳ Logitech button remapping, two ways depending on the action: written to the mouse's
+  onboard profile over HID++ (works without PeriphOS running), or the button reported to
+  PeriphOS (HID++ control diversion) which then performs the action (needed for macros)
 - ⏳ Software remapping layer on Windows (low-level hooks), with Linux (evdev/uinput) in mind
 - ⏳ Macro editor and recorder, delays, repeat and toggle modes, per-profile enablement
 
