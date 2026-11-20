@@ -137,7 +137,7 @@ struct Config {
 
 impl Config {
     /// Sends a command and returns the complete response.
-    fn command(&self, command: u8, parameter0: u8) -> CoreResult<Vec<u8>> {
+    fn command(&self, command: u8, argument: u8) -> CoreResult<Vec<u8>> {
         // Drop responses left over from earlier commands (for example Wootility's).
         let mut scratch = vec![0u8; self.interface.response_size()];
         for _ in 0..32 {
@@ -146,7 +146,7 @@ impl Config {
             }
         }
 
-        let report = protocol::encode(self.interface, command, parameter0);
+        let report = protocol::encode(self.interface, command, argument);
         self.device
             .send_feature_report(&report)
             .map_err(|e| CoreError::Device(e.to_string()))?;

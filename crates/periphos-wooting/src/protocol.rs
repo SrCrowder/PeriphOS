@@ -66,13 +66,17 @@ impl Interface {
     }
 }
 
-/// `[report id, magic (2 bytes), command, parameter 3, 2, 1, 0]`.
-pub fn encode(interface: Interface, command: u8, parameter0: u8) -> [u8; COMMAND_SIZE] {
+/// `[report id, magic (2 bytes), command, argument, 0, 0, 0]`.
+///
+/// The four parameter bytes are sent in reverse order of the RGB SDK's
+/// `parameter0..parameter3`; profile commands take their profile index in
+/// `parameter3`, which is the first parameter byte on the wire (byte 4).
+pub fn encode(interface: Interface, command: u8, argument: u8) -> [u8; COMMAND_SIZE] {
     let (report_id, magic) = match interface {
         Interface::V2 => (0x00, 0xD0),
         Interface::V3 => (0x01, 0xD1),
     };
-    [report_id, magic, 0xDA, command, 0, 0, 0, parameter0]
+    [report_id, magic, 0xDA, command, argument, 0, 0, 0]
 }
 
 /// Active profile index from a GET_CURRENT_PROFILE_INDEX response.
@@ -89,9 +93,11 @@ mod tests {
 
     #[test]
     fn command_layout() {
+        // Activating the second profile (index 1): the index goes in byte 4. Sending it in
+        // byte 7 is silently ignored by the keyboard (seen on an 80HE).
         assert_eq!(
-            encode(Interface::V2, command::ACTIVATE_PROFILE, 2),
-            [0x00, 0xD0, 0xDA, 23, 0, 0, 0, 2]
+            encode(Interface::V2, command::ACTIVATE_PROFILE, 1),
+            [0x00, 0xD0, 0xDA, 23, 1, 0, 0, 0]
         );
         assert_eq!(
             encode(Interface::V3, command::GET_CURRENT_PROFILE_INDEX, 0),
