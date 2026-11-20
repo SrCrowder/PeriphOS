@@ -9,7 +9,7 @@
  * the example devices from `previewFixtures.ts` (development server only).
  */
 import type { IpcError } from "@/types/app";
-import type { ButtonLayout } from "@/types/buttons";
+import type { ButtonDefaults, ButtonLayout } from "@/types/buttons";
 import type { DeviceInfo, DeviceSettings } from "@/types/device";
 import type { AppRule } from "@/types/apps";
 import type { DeviceProfileSettings, Profile, ProfileDraft, SwitchMode } from "@/types/profile";
@@ -43,6 +43,7 @@ function activeProfile(): Profile {
 let fixtureDevices: DeviceInfo[] = [];
 let fixtureSettings = new Map<string, DeviceSettings>();
 let fixtureButtons = new Map<string, ButtonLayout>();
+const buttonDefaults = new Map<string, ButtonDefaults>();
 if (import.meta.env.DEV && new URLSearchParams(location.search).has("fixtures")) {
   const fixtures = await import("./previewFixtures");
   fixtureDevices = fixtures.PREVIEW_FIXTURE_DEVICES;
@@ -224,16 +225,29 @@ const handlers: { [C in CommandName]: (args: Commands[C]["args"]) => Commands[C]
     fixtureButtons.has(deviceId)
       ? structuredClone(fixtureButtons.get(deviceId)!)
       : fail("unsupported", "this device's buttons cannot be read yet"),
-  set_device_button: ({ deviceId, index, action }) => {
+  set_device_buttons: ({ deviceId, assignments }) => {
     const layout = fixtureButtons.get(deviceId) ?? fail("unsupported", "this device's buttons cannot be changed yet");
-    const button = layout.buttons[index] ?? fail("validation", "There is no such button on this device.");
-    const before = button.action;
-    button.action = action;
-    if (!layout.buttons.some((b) => b.action.type === "mouse" && b.action.button === "left")) {
-      button.action = before;
+    const next = structuredClone(layout.buttons);
+    for (const { index, action } of assignments) {
+      const button = next[index] ?? fail("validation", "There is no such button on this device.");
+      if (action.type !== "other") button.action = action;
+    }
+    if (!next.some((b) => b.action.type === "mouse" && b.action.button === "left")) {
       return fail("device", "At least one button must keep the left click, or the mouse could not click.");
     }
+    layout.buttons = next;
     return structuredClone(layout);
+  },
+  get_button_defaults: ({ deviceId }) => structuredClone(buttonDefaults.get(deviceId) ?? null),
+  save_button_defaults: ({ deviceId, deviceName, actions }) => {
+    if (actions.length === 0) return fail("validation", "There are no buttons to save.");
+    const saved = { deviceId, deviceName, actions: structuredClone(actions), updatedAt: Date.now() };
+    buttonDefaults.set(deviceId, saved);
+    return structuredClone(saved);
+  },
+  delete_button_defaults: ({ deviceId }) => {
+    buttonDefaults.delete(deviceId);
+    return null;
   },
   device_diagnostics: () =>
     "HID++ protocol 4.2\n\n## Features\n  1  0x0001 v2  Feature set\n(Browser preview: sample text, no device was read.)",

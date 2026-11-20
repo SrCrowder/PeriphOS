@@ -40,4 +40,19 @@ export interface ButtonLayout {
   /** False when the device is not using its onboard profiles right now. */
   inEffect: boolean;
   specialFunctions: SpecialFunction[];
+  /** Factory assignments in button order, when the device stores them. */
+  factoryDefaults: ButtonAction[] | null;
+}
+
+export interface ButtonAssignment {
+  index: number;
+  action: ButtonAction;
+}
+
+/** Assignments the user saved as a device's own defaults. */
+export interface ButtonDefaults {
+  deviceId: string;
+  deviceName: string;
+  actions: ButtonAction[];
+  updatedAt: number;
 }

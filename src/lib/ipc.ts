@@ -7,7 +7,7 @@
  * in-memory preview backend so the interface can be developed and reviewed.
  */
 import type { AppInfo } from "@/types/app";
-import type { ButtonAction, ButtonLayout } from "@/types/buttons";
+import type { ButtonAction, ButtonAssignment, ButtonDefaults, ButtonLayout } from "@/types/buttons";
 import type { DeviceOverview, DeviceSettings, SettingChange, SettingResult } from "@/types/device";
 import type { AppIdentity, AppRule, AppRuleKind, InstalledPackage } from "@/types/apps";
 import type {
@@ -28,7 +28,13 @@ export interface Commands {
   get_device_settings: { args: { deviceId: string }; result: DeviceSettings };
   device_diagnostics: { args: { deviceId: string }; result: string };
   get_device_buttons: { args: { deviceId: string }; result: ButtonLayout };
-  set_device_button: { args: { deviceId: string; index: number; action: ButtonAction }; result: ButtonLayout };
+  set_device_buttons: { args: { deviceId: string; assignments: ButtonAssignment[] }; result: ButtonLayout };
+  get_button_defaults: { args: { deviceId: string }; result: ButtonDefaults | null };
+  save_button_defaults: {
+    args: { deviceId: string; deviceName: string; actions: ButtonAction[] };
+    result: ButtonDefaults;
+  };
+  delete_button_defaults: { args: { deviceId: string }; result: null };
   apply_device_setting: { args: { deviceId: string; change: SettingChange }; result: SettingResult };
   list_profiles: { args: undefined; result: Profile[] };
   create_profile: { args: { draft: ProfileDraft }; result: Profile };
@@ -88,8 +94,12 @@ export const api = {
   deviceSettings: (deviceId: string) => call("get_device_settings", { deviceId }),
   deviceDiagnostics: (deviceId: string) => call("device_diagnostics", { deviceId }),
   deviceButtons: (deviceId: string) => call("get_device_buttons", { deviceId }),
-  setDeviceButton: (deviceId: string, index: number, action: ButtonAction) =>
-    call("set_device_button", { deviceId, index, action }),
+  setDeviceButtons: (deviceId: string, assignments: ButtonAssignment[]) =>
+    call("set_device_buttons", { deviceId, assignments }),
+  buttonDefaults: (deviceId: string) => call("get_button_defaults", { deviceId }),
+  saveButtonDefaults: (deviceId: string, deviceName: string, actions: ButtonAction[]) =>
+    call("save_button_defaults", { deviceId, deviceName, actions }),
+  deleteButtonDefaults: (deviceId: string) => call("delete_button_defaults", { deviceId }),
   applyDeviceSetting: (deviceId: string, change: SettingChange) =>
     call("apply_device_setting", { deviceId, change }),
   listProfiles: () => call("list_profiles"),

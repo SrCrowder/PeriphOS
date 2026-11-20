@@ -152,7 +152,7 @@ export function previewFixtureButtons(): Map<string, ButtonLayout> {
     "Forward button",
     "Wheel tilt left",
     "Wheel tilt right",
-    "Button behind the wheel",
+    "Button below the wheel",
     "DPI up button",
     "DPI down button",
   ];
@@ -174,6 +174,7 @@ export function previewFixtureButtons(): Map<string, ButtonLayout> {
       "logitech-hidpp:c547:0:1",
       {
         buttons: names.map((name, index) => ({ index, name, action: actions[index]! })),
+        factoryDefaults: structuredClone(actions),
         onboardProfile: 1,
         inEffect: true,
         specialFunctions: [

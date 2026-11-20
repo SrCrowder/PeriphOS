@@ -1,5 +1,6 @@
 use periphos_core::device::{
-    ButtonAction, ButtonLayout, DeviceOverview, DeviceSettings, SettingChange,
+    ButtonAction, ButtonAssignment, ButtonDefaults, ButtonLayout, DeviceOverview, DeviceSettings,
+    SettingChange,
 };
 use periphos_core::CoreError;
 use serde::Serialize;
@@ -53,21 +54,46 @@ pub async fn get_device_buttons(app: AppHandle, device_id: String) -> IpcResult<
     .await
 }
 
-/// Assigns an action to one button; returns the layout read back.
+/// Applies button assignments together; returns the layout read back.
 #[tauri::command]
-pub async fn set_device_button(
+pub async fn set_device_buttons(
     app: AppHandle,
     device_id: String,
-    index: u8,
-    action: ButtonAction,
+    assignments: Vec<ButtonAssignment>,
 ) -> IpcResult<ButtonLayout> {
     blocking(app, move |state| {
         state
             .devices
             .driver_for(&device_id)?
-            .set_button(&device_id, index, action)
+            .set_buttons(&device_id, &assignments)
     })
     .await
+}
+
+/// The button assignments the user saved as this device's defaults.
+#[tauri::command]
+pub fn get_button_defaults(
+    state: State<'_, AppState>,
+    device_id: String,
+) -> IpcResult<Option<ButtonDefaults>> {
+    Ok(state.storage()?.button_defaults(&device_id)?)
+}
+
+#[tauri::command]
+pub fn save_button_defaults(
+    state: State<'_, AppState>,
+    device_id: String,
+    device_name: String,
+    actions: Vec<ButtonAction>,
+) -> IpcResult<ButtonDefaults> {
+    Ok(state
+        .storage()?
+        .save_button_defaults(&device_id, &device_name, &actions)?)
+}
+
+#[tauri::command]
+pub fn delete_button_defaults(state: State<'_, AppState>, device_id: String) -> IpcResult<()> {
+    Ok(state.storage()?.delete_button_defaults(&device_id)?)
 }
 
 /// Read-only technical report of a device, for adding support for it.

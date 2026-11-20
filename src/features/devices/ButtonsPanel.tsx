@@ -1,16 +1,18 @@
-import { Keyboard, RefreshCw, TriangleAlert } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { Bookmark, Factory, Keyboard, RefreshCw, RotateCcw, TriangleAlert } from "lucide-react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
-import { Button, Dialog, Panel, Spinner } from "@/components/ui";
+import { Button, ConfirmDialog, Dialog, Panel, Spinner } from "@/components/ui";
 import { toIpcError } from "@/lib/errors";
 import { MEDIA_KEYS, modifiersOf, shortcutLabel, usageForCode } from "@/lib/hidKeys";
 import { api } from "@/lib/ipc";
 import { cn } from "@/lib/cn";
 import { toast } from "@/stores/toasts";
-import type { ButtonAction, ButtonBinding, ButtonLayout, MouseButton } from "@/types/buttons";
+import type { ButtonAction, ButtonBinding, ButtonDefaults, ButtonLayout, MouseButton } from "@/types/buttons";
 import type { DeviceInfo } from "@/types/device";
 
 import { actionLabel, MOUSE_BUTTON_LABEL, sameAction, SPECIAL_LABEL } from "./buttonActions";
+import { diagramFor } from "./mouseDiagrams";
+import { MouseDiagramView } from "./MouseDiagramView";
 
 type State =
   | { status: "loading" }
@@ -18,13 +20,17 @@ type State =
   | { status: "error"; message: string }
   | { status: "ready"; layout: ButtonLayout };
 
+type Restore = "factory" | "mine";
+
 /**
  * What each button does, read from the device. Assignments are stored in
  * the device's own memory, so they work without PeriphOS running.
  */
 export function ButtonsPanel({ device }: { device: DeviceInfo }) {
   const [state, setState] = useState<State>({ status: "loading" });
+  const [defaults, setDefaults] = useState<ButtonDefaults | null>(null);
   const [editing, setEditing] = useState<ButtonBinding | null>(null);
+  const [restoring, setRestoring] = useState<Restore | null>(null);
   const [saving, setSaving] = useState(false);
 
   const load = useCallback(async () => {
@@ -34,6 +40,12 @@ export function ButtonsPanel({ device }: { device: DeviceInfo }) {
     } catch (e) {
       const error = toIpcError(e);
       setState(error.code === "unsupported" ? { status: "unsupported" } : { status: "error", message: error.message });
+      return;
+    }
+    try {
+      setDefaults(await api.buttonDefaults(device.id));
+    } catch {
+      setDefaults(null);
     }
   }, [device.id]);
 
@@ -41,18 +53,55 @@ export function ButtonsPanel({ device }: { device: DeviceInfo }) {
     void load();
   }, [load]);
 
+  const layout = state.status === "ready" ? state.layout : null;
+  const diagram = layout ? diagramFor(device.name, layout.buttons.length) : null;
+
+  const modified = useMemo(() => {
+    const changed = new Set<number>();
+    layout?.factoryDefaults?.forEach((action, i) => {
+      const current = layout.buttons[i];
+      if (current && !sameAction(current.action, action)) changed.add(i);
+    });
+    return changed;
+  }, [layout]);
+
+  /** Writes the assignments; returns whether all of them were kept. */
+  const write = async (assignments: { index: number; action: ButtonAction }[]): Promise<boolean> => {
+    const next = await api.setDeviceButtons(device.id, assignments);
+    setState({ status: "ready", layout: next });
+    return assignments.every(
+      ({ index, action }) => action.type === "other" || (next.buttons[index] && sameAction(next.buttons[index].action, action)),
+    );
+  };
+
   const assign = async (binding: ButtonBinding, action: ButtonAction) => {
     setSaving(true);
     try {
-      const layout = await api.setDeviceButton(device.id, binding.index, action);
-      setState({ status: "ready", layout });
+      const kept = await write([{ index: binding.index, action }]);
       setEditing(null);
-      const stored = layout.buttons[binding.index];
-      if (stored && sameAction(stored.action, action)) {
-        toast.success(`${binding.name} now does: ${actionLabel(action)}.`);
-      } else {
-        toast.error(`${device.name} did not keep the new assignment for ${binding.name}.`);
-      }
+      if (kept) toast.success(`${binding.name} now does: ${actionLabel(action)}.`);
+      else toast.error(`${device.name} did not keep the new assignment for ${binding.name}.`);
+    } catch (e) {
+      toast.error(toIpcError(e).message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const restore = async (which: Restore) => {
+    const actions = which === "factory" ? layout?.factoryDefaults : defaults?.actions;
+    if (!actions) return;
+    const kept = await write(actions.map((action, index) => ({ index, action })));
+    if (!kept) throw new Error(`${device.name} did not keep every assignment. Read the buttons again to see what it has now.`);
+    toast.success(which === "factory" ? "Factory button settings restored." : "Your default buttons restored.");
+  };
+
+  const saveAsDefaults = async () => {
+    if (!layout) return;
+    setSaving(true);
+    try {
+      setDefaults(await api.saveButtonDefaults(device.id, device.name, layout.buttons.map((b) => b.action)));
+      toast.success(`Saved as the default buttons for ${device.name}.`);
     } catch (e) {
       toast.error(toIpcError(e).message);
     } finally {
@@ -66,10 +115,10 @@ export function ButtonsPanel({ device }: { device: DeviceInfo }) {
     <Panel
       title="Buttons"
       description={
-        state.status === "ready" && state.layout.onboardProfile !== null ? (
+        layout?.onboardProfile != null ? (
           <>
-            Stored in the mouse&apos;s memory (onboard profile {state.layout.onboardProfile}), so they work
-            without PeriphOS and on any computer. They are the same in every PeriphOS profile for now.
+            Stored in the mouse&apos;s memory (onboard profile {layout.onboardProfile}), so they work without
+            PeriphOS and on any computer. They are the same in every PeriphOS profile for now.
           </>
         ) : (
           "Read from the device."
@@ -100,9 +149,9 @@ export function ButtonsPanel({ device }: { device: DeviceInfo }) {
           </Button>
         </div>
       )}
-      {state.status === "ready" && (
-        <div className="flex flex-col gap-4">
-          {!state.layout.inEffect && (
+      {layout && (
+        <div className="flex flex-col gap-5">
+          {!layout.inEffect && (
             <p className="flex gap-2.5 rounded-2xl bg-warning/10 px-4 py-3 text-[13px] text-warning">
               <TriangleAlert className="mt-0.5 size-4 shrink-0" />
               <span>
@@ -111,8 +160,20 @@ export function ButtonsPanel({ device }: { device: DeviceInfo }) {
               </span>
             </p>
           )}
-          <ul className="flex flex-col">
-            {state.layout.buttons.map((binding) => (
+
+          {diagram && (
+            <div className="hidden lg:block">
+              <MouseDiagramView
+                diagram={diagram}
+                buttons={layout.buttons}
+                modified={modified}
+                disabled={saving}
+                onSelect={setEditing}
+              />
+            </div>
+          )}
+          <ul className={cn("flex flex-col", diagram && "lg:hidden")}>
+            {layout.buttons.map((binding) => (
               <li
                 key={binding.index}
                 className="flex items-center justify-between gap-4 border-t border-line py-2.5 first:border-t-0 first:pt-0"
@@ -121,6 +182,7 @@ export function ButtonsPanel({ device }: { device: DeviceInfo }) {
                   <p className="text-sm font-medium">{binding.name}</p>
                   <p className={cn("text-[13px]", binding.action.type === "disabled" ? "text-subtle" : "text-muted")}>
                     {actionLabel(binding.action)}
+                    {modified.has(binding.index) && <span className="ml-2 text-accent">Changed</span>}
                   </p>
                 </div>
                 <Button size="sm" onClick={() => setEditing(binding)} disabled={saving}>
@@ -129,17 +191,60 @@ export function ButtonsPanel({ device }: { device: DeviceInfo }) {
               </li>
             ))}
           </ul>
+
+          <div className="flex flex-wrap items-center gap-2 border-t border-line pt-4">
+            {layout.factoryDefaults && (
+              <Button
+                size="sm"
+                icon={<Factory className="size-3.5" />}
+                disabled={saving || modified.size === 0}
+                onClick={() => setRestoring("factory")}
+              >
+                Restore factory settings
+              </Button>
+            )}
+            <Button
+              size="sm"
+              icon={<RotateCcw className="size-3.5" />}
+              disabled={saving || !defaults}
+              onClick={() => setRestoring("mine")}
+              title={defaults ? undefined : "Save your defaults first."}
+            >
+              Restore my defaults
+            </Button>
+            <Button size="sm" variant="ghost" icon={<Bookmark className="size-3.5" />} disabled={saving} onClick={() => void saveAsDefaults()}>
+              Save current as my defaults
+            </Button>
+            <p className="basis-full text-[12px] text-subtle">
+              {defaults
+                ? `Your defaults for this device were saved on ${new Date(defaults.updatedAt).toLocaleDateString()}.`
+                : "Save the current buttons as your defaults to come back to them later."}
+            </p>
+          </div>
         </div>
       )}
-      {editing && state.status === "ready" && (
+      {editing && layout && (
         <AssignDialog
           binding={editing}
-          layout={state.layout}
+          layout={layout}
+          myDefault={defaults?.actions[editing.index] ?? null}
           saving={saving}
           onClose={() => setEditing(null)}
           onAssign={(action) => void assign(editing, action)}
         />
       )}
+      <ConfirmDialog
+        open={restoring !== null}
+        onClose={() => setRestoring(null)}
+        title={restoring === "factory" ? "Restore factory button settings?" : "Restore your default buttons?"}
+        description={
+          restoring === "factory"
+            ? `Every button of ${device.name} goes back to what it did out of the box, in onboard profile ${layout?.onboardProfile ?? ""}.`
+            : `Every button of ${device.name} goes back to the assignments you saved as your defaults.`
+        }
+        confirmLabel="Restore"
+        onConfirm={() => restore(restoring ?? "factory")}
+      />
     </Panel>
   );
 }
@@ -182,12 +287,14 @@ const MOUSE_BUTTONS: MouseButton[] = ["left", "right", "middle", "back", "forwar
 function AssignDialog({
   binding,
   layout,
+  myDefault,
   saving,
   onClose,
   onAssign,
 }: {
   binding: ButtonBinding;
   layout: ButtonLayout;
+  myDefault: ButtonAction | null;
   saving: boolean;
   onClose: () => void;
   onAssign: (action: ButtonAction) => void;
@@ -199,6 +306,8 @@ function AssignDialog({
     setChoice(action);
   };
   const is = (action: ButtonAction) => sameAction(choice, action);
+  const factoryAction = layout.factoryDefaults?.[binding.index];
+  const factory = factoryAction && factoryAction.type !== "other" ? factoryAction : null;
 
   return (
     <Dialog
@@ -224,6 +333,20 @@ function AssignDialog({
       }
     >
       <div className="flex flex-col gap-5">
+        {(factory || myDefault) && (
+          <Group title="Defaults">
+            {factory && (
+              <Choice selected={is(factory)} onClick={() => pick(factory)}>
+                Factory: {actionLabel(factory)}
+              </Choice>
+            )}
+            {myDefault && myDefault.type !== "other" && (
+              <Choice selected={is(myDefault)} onClick={() => pick(myDefault)}>
+                Mine: {actionLabel(myDefault)}
+              </Choice>
+            )}
+          </Group>
+        )}
         <Group title="Mouse">
           {MOUSE_BUTTONS.map((button) => (
             <Choice key={button} selected={is({ type: "mouse", button })} onClick={() => pick({ type: "mouse", button })}>
@@ -235,7 +358,6 @@ function AssignDialog({
         <Group title="Keyboard">
           <button
             type="button"
-            data-autofocus
             onClick={() => setCapturing(true)}
             onBlur={() => setCapturing(false)}
             onKeyDown={(e) => {
