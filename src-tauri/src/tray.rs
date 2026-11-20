@@ -2,14 +2,18 @@
 //! The tooltip and menu show the active profile and battery levels, and the
 //! menu switches profiles without opening the window.
 
+use std::collections::HashSet;
 use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::Mutex;
 use std::thread;
 
 use periphos_core::device::{BatteryLevel, BatteryState, ChargingState, ConnectionType};
+use tauri::image::Image;
 use tauri::menu::{CheckMenuItem, Menu, MenuItem, PredefinedMenuItem, Submenu};
 use tauri::tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent};
 use tauri::{AppHandle, Manager, Runtime, Window, WindowEvent};
 
+use crate::battery_icon;
 use crate::profile_runtime::{self, ApplyReason};
 use crate::state::{AppState, SwitchMode};
 
@@ -22,6 +26,9 @@ const OPEN_ID: &str = "open";
 const QUIT_ID: &str = "quit";
 const AUTO_ID: &str = "auto";
 const PROFILE_PREFIX: &str = "profile:";
+const BATTERY_PREFIX: &str = "battery:";
+/// Battery tray icons currently shown, by tray ID.
+static BATTERY_ICONS: Mutex<Option<HashSet<String>>> = Mutex::new(None);
 /// Windows truncates tray tooltips at 127 characters.
 const TOOLTIP_MAX: usize = 120;
 
@@ -153,8 +160,18 @@ fn truncate(text: String, max: usize) -> String {
     cut
 }
 
-/// Rebuilds the tooltip and menu from the current profile and devices.
+/// Rebuilds the tooltip, menu and battery icons from the current profile and
+/// devices. Safe to call from any thread: tray menus may only be changed on
+/// the main thread (on Windows, changes from other threads are lost).
 pub fn refresh(app: &AppHandle) {
+    let handle = app.clone();
+    let _ = app.run_on_main_thread(move || {
+        refresh_now(&handle);
+        sync_battery_icons(&handle);
+    });
+}
+
+fn refresh_now(app: &AppHandle) {
     if !TRAY_AVAILABLE.load(Ordering::SeqCst) {
         return;
     }
@@ -253,6 +270,78 @@ pub fn refresh(app: &AppHandle) {
     if let Ok(menu) = menu {
         let _ = tray.set_menu(Some(menu));
     }
+}
+
+/// One tray icon per wireless device with a readable battery, drawn with its
+/// level; icons of devices that are gone are removed.
+fn sync_battery_icons(app: &AppHandle) {
+    let state = app.state::<AppState>();
+    let settings = state
+        .storage()
+        .and_then(|s| s.load_settings())
+        .unwrap_or_default();
+    let devices = if settings.battery_in_tray {
+        state.last_devices()
+    } else {
+        Vec::new()
+    };
+    let Ok(mut shown) = BATTERY_ICONS.lock() else {
+        return;
+    };
+    let shown = shown.get_or_insert_with(HashSet::new);
+
+    let mut wanted = HashSet::new();
+    for device in devices
+        .iter()
+        .filter(|d| d.connection != ConnectionType::Virtual)
+    {
+        let Some(battery) = device.battery else {
+            continue;
+        };
+        let id = format!("{BATTERY_PREFIX}{}", device.id);
+        let (fill, tone) = battery_icon::appearance(
+            &battery,
+            settings.battery_warning_percent,
+            settings.battery_critical_percent,
+        );
+        let icon = Image::new_owned(
+            battery_icon::render(battery.percent, fill, tone),
+            battery_icon::SIZE,
+            battery_icon::SIZE,
+        );
+        let tooltip = format!("{}: {}", device.name, battery_label(&battery));
+        match app.tray_by_id(&id) {
+            Some(tray) => {
+                let _ = tray.set_icon(Some(icon));
+                let _ = tray.set_tooltip(Some(tooltip));
+            }
+            None => {
+                let built = TrayIconBuilder::with_id(&id)
+                    .icon(icon)
+                    .tooltip(tooltip)
+                    .show_menu_on_left_click(false)
+                    .on_tray_icon_event(|tray, event| {
+                        if let TrayIconEvent::Click {
+                            button: MouseButton::Left,
+                            button_state: MouseButtonState::Up,
+                            ..
+                        } = event
+                        {
+                            show_main_window(tray.app_handle());
+                        }
+                    })
+                    .build(app);
+                if built.is_err() {
+                    continue;
+                }
+            }
+        }
+        wanted.insert(id);
+    }
+    for gone in shown.difference(&wanted) {
+        let _ = app.remove_tray_by_id(gone);
+    }
+    *shown = wanted;
 }
 
 /// Closing the window hides it to the tray when the user wants PeriphOS to keep running.

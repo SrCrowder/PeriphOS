@@ -6,6 +6,7 @@
 
 mod app_watcher;
 mod battery_alerts;
+mod battery_icon;
 mod commands;
 mod conflicts;
 mod device_watcher;

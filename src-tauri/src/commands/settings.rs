@@ -11,12 +11,18 @@ pub fn get_settings(state: State<'_, AppState>) -> IpcResult<AppSettings> {
 
 #[tauri::command]
 pub fn update_settings(
+    app: tauri::AppHandle,
     state: State<'_, AppState>,
     settings: AppSettings,
 ) -> IpcResult<AppSettings> {
-    let storage = state.storage()?;
-    storage.save_settings(&settings)?;
-    Ok(storage.load_settings()?)
+    let saved = {
+        let storage = state.storage()?;
+        storage.save_settings(&settings)?;
+        storage.load_settings()?
+    };
+    // Battery icons and thresholds are drawn in the tray.
+    crate::tray::refresh(&app);
+    Ok(saved)
 }
 
 /// Whether PeriphOS starts when the user signs in. The operating system is the
