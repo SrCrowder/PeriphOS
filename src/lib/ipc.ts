@@ -52,6 +52,7 @@ export interface Commands {
   update_settings: { args: { settings: AppSettings }; result: AppSettings };
   get_launch_at_startup: { args: undefined; result: boolean };
   set_launch_at_startup: { args: { enabled: boolean }; result: boolean };
+  send_test_notification: { args: undefined; result: null };
   get_update_status: { args: undefined; result: UpdateStatus };
   check_for_update: { args: undefined; result: UpdateCheck };
   install_update: { args: undefined; result: null };
@@ -106,6 +107,7 @@ export const api = {
   updateSettings: (settings: AppSettings) => call("update_settings", { settings }),
   launchAtStartup: () => call("get_launch_at_startup"),
   setLaunchAtStartup: (enabled: boolean) => call("set_launch_at_startup", { enabled }),
+  sendTestNotification: () => call("send_test_notification"),
   updateStatus: () => call("get_update_status"),
   checkForUpdate: () => call("check_for_update"),
   installUpdate: () => call("install_update"),

@@ -16,6 +16,11 @@ export interface AppSettings {
   autoCheckUpdates: boolean;
   /** Keep running in the system tray when the window is closed. */
   minimizeToTray: boolean;
+  /** Notify when a wireless device's battery runs low. */
+  batteryAlerts: boolean;
+  batteryWarningPercent: number;
+  /** Always below the warning level. */
+  batteryCriticalPercent: number;
 }
 
 export const DEFAULT_SETTINGS: AppSettings = {
@@ -25,4 +30,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   updateChannel: null,
   autoCheckUpdates: true,
   minimizeToTray: true,
+  batteryAlerts: true,
+  batteryWarningPercent: 20,
+  batteryCriticalPercent: 10,
 };

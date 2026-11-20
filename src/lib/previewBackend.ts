@@ -241,6 +241,7 @@ const handlers: { [C in CommandName]: (args: Commands[C]["args"]) => Commands[C]
   }),
   check_for_update: () => fail("unsupported", "Updates are only available in the desktop app."),
   install_update: () => fail("unsupported", "Updates are only available in the desktop app."),
+  send_test_notification: () => fail("unsupported", "Notifications are only available in the desktop app."),
   get_launch_at_startup: () => launchAtStartup,
   set_launch_at_startup: ({ enabled }) => (launchAtStartup = enabled),
   get_settings: () => ({ ...settings }),

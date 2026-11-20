@@ -9,6 +9,7 @@ import { toast } from "@/stores/toasts";
 import type { Theme } from "@/types/settings";
 
 import { AccentPicker } from "./AccentPicker";
+import { BatteryAlertsPanel } from "./BatteryAlertsPanel";
 import { LaunchAtStartupRow } from "./LaunchAtStartupRow";
 import { UpdatesPanel } from "./UpdatesPanel";
 
@@ -81,6 +82,8 @@ export function SettingsPage() {
             }
           />
         </Panel>
+
+        <BatteryAlertsPanel />
 
         <UpdatesPanel />
 
