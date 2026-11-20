@@ -2812,6 +2812,7 @@ dependencies = [
  "periphos-hid",
  "periphos-logitech",
  "periphos-storage",
+ "periphos-taskbar",
  "periphos-wooting",
  "serde",
  "serde_json",
@@ -2868,6 +2869,13 @@ dependencies = [
  "rusqlite",
  "serde_json",
  "uuid",
+]
+
+[[package]]
+name = "periphos-taskbar"
+version = "0.1.0"
+dependencies = [
+ "windows",
 ]
 
 [[package]]
