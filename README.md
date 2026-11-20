@@ -13,8 +13,8 @@
 
 > **Status: early development.** PeriphOS detects mice, keyboards and controllers, reads the
 > battery of wireless Logitech devices, changes DPI and report rate on Logitech mice, switches
-> Wooting keyboard profiles, and switches profiles automatically per game. Button remapping,
-> macros and lighting are not available yet. See the [roadmap](ROADMAP.md).
+> Wooting keyboard profiles, and switches profiles automatically per game. Logitech G mouse
+> buttons can be reassigned. Macros and lighting are not available yet. See the [roadmap](ROADMAP.md).
 
 ## Supported devices
 
@@ -22,17 +22,20 @@ What PeriphOS can do today, per device. **Tested** means confirmed on real hardw
 **expected** means the device uses the same protocol but nobody has confirmed it yet. Reports
 for untested devices are very welcome (see [Contributing](#contributing)).
 
-| Device | Connection | Battery | DPI | Report rate | Onboard profiles | Status |
-| ------ | ---------- | :-----: | :-: | :---------: | :--------------: | ------ |
-| Logitech G502 X PLUS | LIGHTSPEED receiver | ✅ | ✅ | ✅ | Detected, not switched | Tested |
-| Logitech G502 X LIGHTSPEED | LIGHTSPEED receiver | ✅ | ✅ | ✅ | Detected, not switched | Expected |
-| Other Logitech mice and keyboards (HID++ 2.0) | Unifying, LIGHTSPEED, Nano or Bolt receiver | ✅ | ✅ ¹ | ✅ ¹ | Detected, not switched | Expected |
-| Logitech devices on a USB cable | USB | — | — | — | — | Detected only |
-| Wooting 80HE | USB | n/a | n/a | — | ✅ Switches the 4 profiles stored on the keyboard | Tested |
-| Other Wooting keyboards (Two HE, 60HE family; older One and Two) | USB | n/a | n/a | — | ✅ Same as the 80HE | Expected |
-| Any other mouse, keyboard or controller | USB, Bluetooth | — | — | — | — | Detected only |
+| Device | Connection | Battery | DPI | Report rate | Buttons | Onboard profiles | Status |
+| ------ | ---------- | :-----: | :-: | :---------: | :-----: | :--------------: | ------ |
+| Logitech G502 X PLUS | LIGHTSPEED receiver | ✅ | ✅ | ✅ | ✅ ² | Detected, not switched | Tested ³ |
+| Logitech G502 X LIGHTSPEED | LIGHTSPEED receiver | ✅ | ✅ | ✅ | ✅ ² | Detected, not switched | Expected |
+| Other Logitech mice and keyboards (HID++ 2.0) | Unifying, LIGHTSPEED, Nano or Bolt receiver | ✅ | ✅ ¹ | ✅ ¹ | ✅ ² | Detected, not switched | Expected |
+| Logitech devices on a USB cable | USB | — | — | — | — | — | Detected only |
+| Wooting 80HE | USB | n/a | n/a | — | In Wootility | ✅ Switches the 4 profiles stored on the keyboard | Tested |
+| Other Wooting keyboards (Two HE, 60HE family; older One and Two) | USB | n/a | n/a | — | In Wootility | ✅ Same as the 80HE | Expected |
+| Any other mouse, keyboard or controller | USB, Bluetooth | — | — | — | — | — | Detected only |
 
-¹ When the device reports the setting; PeriphOS only offers values the device accepts.
+¹ When the device reports the setting; PeriphOS only offers values the device accepts.<br/>
+² Mice that keep their buttons in onboard profiles (Logitech G series): mouse buttons, keys and
+shortcuts, media keys and DPI functions, stored on the mouse. Macros are not supported yet.<br/>
+³ Button remapping is new and not yet confirmed on real hardware.
 
 Every device works with PeriphOS profiles, which switch automatically when a game or app
 comes to the front. On Logitech devices, close G HUB while using PeriphOS; on Wooting

@@ -84,10 +84,18 @@ what exists today. Legend: ✅ implemented, 🟡 partially implemented, ⏳ plan
 
 ## Phase 4: Input remapping and macros ⏳
 
-- ⏳ Action model (key, mouse button, media, shortcut, launch app, macro, disabled)
-- ⏳ Logitech button remapping, two ways depending on the action: written to the mouse's
-  onboard profile over HID++ (works without PeriphOS running), or the button reported to
-  PeriphOS (HID++ control diversion) which then performs the action (needed for macros)
+- ✅ Action model: mouse button, key with modifiers, media key, device function (DPI, wheel
+  tilt, onboard profile), disabled; assignments PeriphOS cannot edit yet are kept
+- ✅ Read-only technical report on device pages (HID++ features, controls, onboard memory),
+  used to add support for new devices from real data
+- ✅ Logitech G button remapping stored in the mouse's onboard profile (HID++ 0x8100): read,
+  modify one assignment, CRC, write, read back, undo on mismatch; never removes the last
+  left click. Works without PeriphOS running. Not confirmed on real hardware yet
+- ⏳ Logitech onboard profile slots per PeriphOS profile (switch slots instead of rewriting
+  memory, which wears flash), G-shift layer, macros stored on the mouse
+- ⏳ Macros through PeriphOS for devices without onboard macros. The G502 X family has no
+  control diversion (HID++ 0x1B04), so its software macros need the mouse button spy
+  (0x8110) or a low-level hook
 - ⏳ Software remapping layer on Windows (low-level hooks), with Linux (evdev/uinput) in mind
 - ⏳ Macro editor and recorder, delays, repeat and toggle modes, per-profile enablement
 
