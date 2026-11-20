@@ -39,6 +39,18 @@ pub async fn get_device_settings(app: AppHandle, device_id: String) -> IpcResult
     .await
 }
 
+/// Read-only technical report of a device, for adding support for it.
+#[tauri::command]
+pub async fn device_diagnostics(app: AppHandle, device_id: String) -> IpcResult<String> {
+    blocking(app, move |state| {
+        state
+            .devices
+            .driver_for(&device_id)?
+            .diagnostics(&device_id)
+    })
+    .await
+}
+
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct SettingResult {

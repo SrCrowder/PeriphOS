@@ -217,6 +217,8 @@ const handlers: { [C in CommandName]: (args: Commands[C]["args"]) => Commands[C]
     const settings = fixtureSettings.get(deviceId);
     return settings ? structuredClone(settings) : fail("unsupported", "this device's settings cannot be read yet");
   },
+  device_diagnostics: () =>
+    "HID++ protocol 4.2\n\n## Features\n  1  0x0001 v2  Feature set\n(Browser preview: sample text, no device was read.)",
   apply_device_setting: ({ deviceId, change }) => {
     const settings = fixtureSettings.get(deviceId);
     if (!settings) return fail("unsupported", "this device's settings cannot be changed yet");

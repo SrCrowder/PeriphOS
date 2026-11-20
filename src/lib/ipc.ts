@@ -25,6 +25,7 @@ export interface Commands {
   get_app_info: { args: undefined; result: AppInfo };
   get_device_overview: { args: undefined; result: DeviceOverview };
   get_device_settings: { args: { deviceId: string }; result: DeviceSettings };
+  device_diagnostics: { args: { deviceId: string }; result: string };
   apply_device_setting: { args: { deviceId: string; change: SettingChange }; result: SettingResult };
   list_profiles: { args: undefined; result: Profile[] };
   create_profile: { args: { draft: ProfileDraft }; result: Profile };
@@ -82,6 +83,7 @@ export const api = {
   appInfo: () => call("get_app_info"),
   deviceOverview: () => call("get_device_overview"),
   deviceSettings: (deviceId: string) => call("get_device_settings", { deviceId }),
+  deviceDiagnostics: (deviceId: string) => call("device_diagnostics", { deviceId }),
   applyDeviceSetting: (deviceId: string, change: SettingChange) =>
     call("apply_device_setting", { deviceId, change }),
   listProfiles: () => call("list_profiles"),

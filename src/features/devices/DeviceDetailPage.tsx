@@ -11,6 +11,7 @@ import { DeviceIllustration } from "./DeviceIllustration";
 import { DeviceSettingsPanel } from "./DeviceSettingsPanel";
 import { describeCapability, describeDevice } from "./labels";
 import { SUPPORT_LEVELS } from "./supportLevels";
+import { hasTechnicalReport, TechnicalReportPanel } from "./TechnicalReportPanel";
 
 export function DeviceDetailPage() {
   const deviceId = useNavigation((s) => s.deviceId);
@@ -149,6 +150,7 @@ export function DeviceDetailPage() {
             <dd className="font-semibold">{device.driverId}</dd>
           </dl>
         </Panel>
+        {hasTechnicalReport(device) && <TechnicalReportPanel key={device.id} device={device} />}
       </div>
     </div>
   );
