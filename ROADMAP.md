@@ -99,8 +99,10 @@ what exists today. Legend: ✅ implemented, 🟡 partially implemented, ⏳ plan
 - 🟡 **Wireless battery monitor**: battery level for Logitech wireless devices, low-battery
   notifications with two configurable levels (sent once per discharge), levels in the tray
   tooltip and menu; other manufacturers are planned
-- ✅ **Battery in the tray**: one tray icon per wireless device showing its charge, coloured by
-  state (in the spirit of TraySense)
+- ✅ **Battery on the taskbar** (default, Windows): an icon and the charge of each wireless device
+  as text next to the tray, in the spirit of TraySense; hidden during full-screen games.
+  Alternatives: one tray icon per device, or off
+- ⏳ More taskbar readout styles and items (for example the active profile)
 - ⏳ Profile import/export and full backup/restore
 - ⏳ Languages: choose the app language in Settings (English first, Spanish next; translations
   contributed by the community)

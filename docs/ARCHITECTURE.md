@@ -184,6 +184,16 @@ matching profile (package rules first) or the default profile becomes active. Ac
 profile by hand switches to manual mode until the user resumes automatic switching. PeriphOS's
 own window never changes the profile.
 
+## Battery indicator
+
+`crates/periphos-taskbar` draws a compact readout on the Windows taskbar: a small layered,
+non-activating, top-most window placed just left of the notification area (`TrayNotifyWnd`
+inside `Shell_TrayWnd`), redrawn on change and every second. Text is drawn with GDI (Segoe UI,
+and Segoe Fluent Icons or Segoe MDL2 Assets for device glyphs) white on black, then turned into
+premultiplied alpha in the colour of each item. It hides while a full-screen app is in front,
+when the taskbar is vertical or auto-hidden, and when there is nothing to show. Alternatively,
+`src-tauri/src/battery_icon.rs` draws one tray icon per device.
+
 ## Persistence
 
 - One database file, `periphos.db`, in the OS app-data directory
