@@ -105,4 +105,9 @@ what exists today. Legend: ✅ implemented, 🟡 partially implemented, ⏳ plan
   contributed by the community)
 - ⏳ Appearance selector: interface styles (Graphite, Stage, Mono) and logo marks besides the default Tactile style and Dial logo
 - ⏳ Community driver/extension model
+- ⏳ **Report a device**: a button for devices that are unknown or not well supported, which
+  prepares a report with what is needed to support the model (IDs, interfaces, descriptors),
+  shown to the user before anything is sent
+- ⏳ **Custom themes**: create and switch user-made themes (colours, type, shapes and more), with
+  a theme guide written so it can be handed to an AI agent to build a theme
 - ⏳ Linux builds and packaging as a first-class target
