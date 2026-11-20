@@ -5,6 +5,7 @@
 //! IPC commands and translate errors.
 
 mod app_watcher;
+mod battery_alerts;
 mod commands;
 mod conflicts;
 mod device_watcher;
@@ -31,6 +32,7 @@ pub fn run() {
         }))
         .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_plugin_dialog::init())
+        .plugin(tauri_plugin_notification::init())
         .plugin(
             tauri_plugin_autostart::Builder::new()
                 .args([tray::HIDDEN_ARG])
@@ -74,6 +76,7 @@ pub fn run() {
             commands::settings::update_settings,
             commands::settings::get_launch_at_startup,
             commands::settings::set_launch_at_startup,
+            commands::settings::send_test_notification,
             commands::updates::get_update_status,
             commands::updates::check_for_update,
             commands::updates::install_update,

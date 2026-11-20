@@ -43,3 +43,18 @@ pub fn set_launch_at_startup(app: tauri::AppHandle, enabled: bool) -> IpcResult<
             .into()
     })
 }
+
+/// Shows a sample notification so the user can check that alerts get through.
+#[tauri::command]
+pub fn send_test_notification(app: tauri::AppHandle) -> IpcResult<()> {
+    use tauri_plugin_notification::NotificationExt;
+    app.notification()
+        .builder()
+        .title("PeriphOS battery alerts")
+        .body("This is how PeriphOS tells you a device needs charging.")
+        .show()
+        .map_err(|e| {
+            periphos_core::CoreError::Unsupported(format!("notifications are unavailable: {e}"))
+                .into()
+        })
+}

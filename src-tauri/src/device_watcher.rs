@@ -11,6 +11,7 @@ use std::time::Duration;
 use periphos_core::device::DeviceOverview;
 use tauri::{AppHandle, Emitter, Manager};
 
+use crate::battery_alerts::BatteryAlerts;
 use crate::profile_runtime;
 use crate::state::AppState;
 
@@ -23,6 +24,7 @@ pub fn spawn(app: AppHandle) {
         .spawn(move || {
             let mut last: Option<DeviceOverview> = None;
             let mut known: HashSet<String> = HashSet::new();
+            let mut battery_alerts = BatteryAlerts::default();
             loop {
                 let state = app.state::<AppState>();
                 let overview = state.devices.scan();
@@ -41,10 +43,31 @@ pub fn spawn(app: AppHandle) {
                     if !connected.is_empty() {
                         profile_runtime::on_devices_connected(&app, &state, &connected);
                     }
+                    notify_low_batteries(&app, &state, &mut battery_alerts, &overview.devices);
                     last = Some(overview);
                 }
                 thread::sleep(POLL_INTERVAL);
             }
         })
         .expect("failed to start the device watcher thread");
+}
+
+fn notify_low_batteries(
+    app: &AppHandle,
+    state: &AppState,
+    alerts: &mut BatteryAlerts,
+    devices: &[periphos_core::device::DeviceInfo],
+) {
+    use tauri_plugin_notification::NotificationExt;
+    let Ok(settings) = state.storage().and_then(|s| s.load_settings()) else {
+        return;
+    };
+    for alert in alerts.check(devices, &settings) {
+        let _ = app
+            .notification()
+            .builder()
+            .title(alert.title())
+            .body(alert.body())
+            .show();
+    }
 }
