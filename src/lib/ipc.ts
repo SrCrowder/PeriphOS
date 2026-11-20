@@ -50,6 +50,8 @@ export interface Commands {
   delete_profile_device_settings: { args: { profileId: string; deviceId: string }; result: null };
   get_settings: { args: undefined; result: AppSettings };
   update_settings: { args: { settings: AppSettings }; result: AppSettings };
+  get_launch_at_startup: { args: undefined; result: boolean };
+  set_launch_at_startup: { args: { enabled: boolean }; result: boolean };
   get_update_status: { args: undefined; result: UpdateStatus };
   check_for_update: { args: undefined; result: UpdateCheck };
   install_update: { args: undefined; result: null };
@@ -102,6 +104,8 @@ export const api = {
     call("delete_profile_device_settings", { profileId, deviceId }),
   getSettings: () => call("get_settings"),
   updateSettings: (settings: AppSettings) => call("update_settings", { settings }),
+  launchAtStartup: () => call("get_launch_at_startup"),
+  setLaunchAtStartup: (enabled: boolean) => call("set_launch_at_startup", { enabled }),
   updateStatus: () => call("get_update_status"),
   checkForUpdate: () => call("check_for_update"),
   installUpdate: () => call("install_update"),

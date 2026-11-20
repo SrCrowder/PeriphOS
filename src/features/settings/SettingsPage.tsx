@@ -9,6 +9,7 @@ import { toast } from "@/stores/toasts";
 import type { Theme } from "@/types/settings";
 
 import { AccentPicker } from "./AccentPicker";
+import { LaunchAtStartupRow } from "./LaunchAtStartupRow";
 import { UpdatesPanel } from "./UpdatesPanel";
 
 const THEME_OPTIONS = [
@@ -16,10 +17,6 @@ const THEME_OPTIONS = [
   { value: "light", label: "Light", icon: <Sun className="size-3.5" /> },
   { value: "system", label: "System", icon: <Monitor className="size-3.5" /> },
 ] as const satisfies readonly { value: Theme; label: string; icon: React.ReactNode }[];
-
-function PlannedSwitch({ label }: { label: string }) {
-  return <Switch checked={false} disabled label={label} />;
-}
 
 export function SettingsPage() {
   const { settings, update } = useSettings();
@@ -71,12 +68,7 @@ export function SettingsPage() {
         </Panel>
 
         <Panel title="Behavior">
-          <SettingRow
-            disabled
-            title={<>Launch at startup <PlannedTag /></>}
-            description="Start PeriphOS when you sign in so profiles apply right away."
-            control={<PlannedSwitch label="Launch at startup" />}
-          />
+          <LaunchAtStartupRow />
           <SettingRow
             title="Keep running in the system tray"
             description="Closing the window keeps PeriphOS in the tray so profiles keep switching. Quit from the tray icon's menu."

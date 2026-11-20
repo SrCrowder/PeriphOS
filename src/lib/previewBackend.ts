@@ -30,6 +30,7 @@ let profiles: Profile[] = [
 ];
 let settings: AppSettings = { ...DEFAULT_SETTINGS };
 let activeProfileId: string | null = null;
+let launchAtStartup = false;
 let switchMode: SwitchMode = "automatic";
 let appRules: AppRule[] = [];
 let deviceSettings: (DeviceProfileSettings & { profileId: string })[] = [];
@@ -240,6 +241,8 @@ const handlers: { [C in CommandName]: (args: Commands[C]["args"]) => Commands[C]
   }),
   check_for_update: () => fail("unsupported", "Updates are only available in the desktop app."),
   install_update: () => fail("unsupported", "Updates are only available in the desktop app."),
+  get_launch_at_startup: () => launchAtStartup,
+  set_launch_at_startup: ({ enabled }) => (launchAtStartup = enabled),
   get_settings: () => ({ ...settings }),
   update_settings: ({ settings: next }) => {
     settings = { ...next };
