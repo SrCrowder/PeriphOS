@@ -11,10 +11,37 @@
 
 ---
 
-> **Status: early development.** PeriphOS detects mice, keyboards and controllers, identifies
-> known models and shows what each one can do, finds devices connected through Logitech
-> receivers and shows their battery, and manages profiles and settings. It **does not change
-> any device setting yet**. See the [roadmap](ROADMAP.md).
+> **Status: early development.** PeriphOS detects mice, keyboards and controllers, reads the
+> battery of wireless Logitech devices, changes DPI and report rate on Logitech mice, switches
+> Wooting keyboard profiles, and switches profiles automatically per game. Button remapping,
+> macros and lighting are not available yet. See the [roadmap](ROADMAP.md).
+
+## Supported devices
+
+What PeriphOS can do today, per device. **Tested** means confirmed on real hardware;
+**expected** means the device uses the same protocol but nobody has confirmed it yet. Reports
+for untested devices are very welcome (see [Contributing](#contributing)).
+
+| Device | Connection | Battery | DPI | Report rate | Onboard profiles | Status |
+| ------ | ---------- | :-----: | :-: | :---------: | :--------------: | ------ |
+| Logitech G502 X PLUS | LIGHTSPEED receiver | ✅ | ✅ | ✅ | Detected, not switched | Tested |
+| Logitech G502 X LIGHTSPEED | LIGHTSPEED receiver | ✅ | ✅ | ✅ | Detected, not switched | Expected |
+| Other Logitech mice and keyboards (HID++ 2.0) | Unifying, LIGHTSPEED, Nano or Bolt receiver | ✅ | ✅ ¹ | ✅ ¹ | Detected, not switched | Expected |
+| Logitech devices on a USB cable | USB | — | — | — | — | Detected only |
+| Wooting 80HE | USB | n/a | n/a | — | ✅ Switches the 4 profiles stored on the keyboard | Tested |
+| Other Wooting keyboards (Two HE, 60HE family; older One and Two) | USB | n/a | n/a | — | ✅ Same as the 80HE | Expected |
+| Any other mouse, keyboard or controller | USB, Bluetooth | — | — | — | — | Detected only |
+
+¹ When the device reports the setting; PeriphOS only offers values the device accepts.
+
+Every device works with PeriphOS profiles, which switch automatically when a game or app
+comes to the front. On Logitech devices, close G HUB while using PeriphOS; on Wooting
+keyboards, close Wootility: both apps take over the device. Actuation points, rapid trigger
+and lighting for Wooting keyboards are still set in Wootility and stored in each onboard
+profile.
+
+Battery levels can be shown as text on the Windows taskbar, as tray icons, and as
+low-battery notifications.
 
 ## Why
 
@@ -83,7 +110,10 @@ cargo clippy --workspace --all-targets
 crates/periphos-core     Hardware-agnostic domain: devices, capabilities, drivers, profiles, settings
 crates/periphos-storage  SQLite persistence with versioned migrations
 crates/periphos-hid      Generic HID device detection and the known-device database
-crates/periphos-logitech Logitech HID++ driver (receivers, battery)
+crates/periphos-logitech Logitech HID++ driver (receivers, battery, DPI, report rate)
+crates/periphos-wooting  Wooting keyboard driver (onboard profile switching)
+crates/periphos-apps     Foreground app and installed game detection for automatic profiles
+crates/periphos-taskbar  Battery text readout on the Windows taskbar
 src-tauri/               Desktop app: Tauri setup and IPC commands (thin layer)
 src/                     React + TypeScript frontend
 docs/                    Architecture, design notes and release process
