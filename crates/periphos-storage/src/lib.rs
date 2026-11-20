@@ -9,6 +9,7 @@
 //!   `periphos-core`, never raw rows.
 
 mod app_rules;
+mod button_defaults;
 mod device_settings;
 mod migrations;
 mod profiles;

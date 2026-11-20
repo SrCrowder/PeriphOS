@@ -52,6 +52,15 @@ const MIGRATIONS: &[&str] = &[
     r#"
     ALTER TABLE profile_device_settings ADD COLUMN onboard_profile INTEGER;
     "#,
+    // v5: button assignments saved as a device's own defaults.
+    r#"
+    CREATE TABLE device_button_defaults (
+        device_id    TEXT PRIMARY KEY NOT NULL,
+        device_name  TEXT NOT NULL,
+        actions_json TEXT NOT NULL,
+        updated_at   INTEGER NOT NULL
+    );
+    "#,
 ];
 
 pub(crate) fn run(conn: &mut Connection) -> CoreResult<()> {
