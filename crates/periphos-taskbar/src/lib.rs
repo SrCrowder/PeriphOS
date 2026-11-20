@@ -7,6 +7,7 @@
 //!
 //! - Hidden while a full-screen app (a game) is in front, when the taskbar is
 //!   auto-hidden or vertical, and when there is nothing to show.
+//! - Hovering an item shows a tooltip naming its device.
 //! - Text colour follows the taskbar theme; low, critical and charging levels
 //!   get their own colours.
 //! - Other platforms: not supported ([`SUPPORTED`] is false, calls do nothing).
@@ -70,6 +71,8 @@ pub struct Item {
     /// Short text, e.g. `93%`.
     pub text: String,
     pub tone: Tone,
+    /// Shown while the pointer rests on the item, e.g. `G502 X: 54%`.
+    pub tooltip: String,
 }
 
 /// Replaces what the readout shows. An empty list hides it. Starts the

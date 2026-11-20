@@ -2,6 +2,7 @@
 //! just left of the taskbar's notification area, redrawn on demand and every
 //! second (to follow tray width, theme, DPI and full-screen apps).
 
+use std::cell::RefCell;
 use std::sync::{Mutex, OnceLock};
 use std::thread;
 
@@ -17,15 +18,19 @@ use windows::Win32::Graphics::Gdi::{
 };
 use windows::Win32::System::LibraryLoader::GetModuleHandleW;
 use windows::Win32::System::Registry::{RegGetValueW, HKEY_CURRENT_USER, RRF_RT_REG_DWORD};
+use windows::Win32::UI::Controls::{
+    InitCommonControlsEx, ICC_WIN95_CLASSES, INITCOMMONCONTROLSEX, TOOLTIPS_CLASSW, TTF_SUBCLASS,
+    TTM_ADDTOOLW, TTM_DELTOOLW, TTM_SETMAXTIPWIDTH, TTS_ALWAYSTIP, TTS_NOPREFIX, TTTOOLINFOW,
+};
 use windows::Win32::UI::HiDpi::GetDpiForWindow;
 use windows::Win32::UI::WindowsAndMessaging::{
     CreateWindowExW, DefWindowProcW, DestroyWindow, DispatchMessageW, FindWindowExW, FindWindowW,
     GetClassNameW, GetForegroundWindow, GetMessageW, GetWindowRect, LoadCursorW, PostMessageW,
-    PostQuitMessage, RegisterClassExW, SetTimer, SetWindowPos, ShowWindow, TranslateMessage,
-    UpdateLayeredWindow, HWND_TOPMOST, IDC_HAND, MA_NOACTIVATE, MSG, SWP_NOACTIVATE, SWP_NOMOVE,
-    SWP_NOSIZE, SW_HIDE, SW_SHOWNOACTIVATE, ULW_ALPHA, WM_APP, WM_CLOSE, WM_DESTROY, WM_LBUTTONUP,
-    WM_MOUSEACTIVATE, WM_TIMER, WNDCLASSEXW, WS_EX_LAYERED, WS_EX_NOACTIVATE, WS_EX_TOOLWINDOW,
-    WS_EX_TOPMOST, WS_POPUP,
+    PostQuitMessage, RegisterClassExW, SendMessageW, SetTimer, SetWindowPos, ShowWindow,
+    TranslateMessage, UpdateLayeredWindow, HWND_TOPMOST, IDC_HAND, MA_NOACTIVATE, MSG,
+    SWP_NOACTIVATE, SWP_NOMOVE, SWP_NOSIZE, SW_HIDE, SW_SHOWNOACTIVATE, ULW_ALPHA, WINDOW_STYLE,
+    WM_APP, WM_CLOSE, WM_DESTROY, WM_LBUTTONUP, WM_MOUSEACTIVATE, WM_TIMER, WNDCLASSEXW,
+    WS_EX_LAYERED, WS_EX_NOACTIVATE, WS_EX_TOOLWINDOW, WS_EX_TOPMOST, WS_POPUP,
 };
 
 use crate::{colorize, Item};
@@ -38,6 +43,14 @@ static ITEMS: Mutex<Vec<Item>> = Mutex::new(Vec::new());
 /// Readout window handle (as an integer, so it can be shared between threads).
 static WINDOW: Mutex<Option<isize>> = Mutex::new(None);
 static ON_CLICK: OnceLock<Box<dyn Fn() + Send + Sync>> = OnceLock::new();
+
+thread_local! {
+    /// Tooltip control of the readout window (window thread only).
+    static TOOLTIP: RefCell<Option<HWND>> = const { RefCell::new(None) };
+    /// Tool areas registered with the tooltip, so they are only replaced when
+    /// they change (replacing them hides a tooltip being shown).
+    static TOOLS: RefCell<Vec<(RECT, String)>> = const { RefCell::new(Vec::new()) };
+}
 
 pub fn set_on_click(callback: Box<dyn Fn() + Send + Sync>) {
     let _ = ON_CLICK.set(callback);
@@ -106,6 +119,7 @@ fn run(ready: std::sync::mpsc::Sender<Option<isize>>) {
             return;
         };
         let _ = ready.send(Some(hwnd.0 as isize));
+        create_tooltip(hwnd, module.into());
         SetTimer(Some(hwnd), TIMER_ID, TIMER_MS, None);
         redraw(hwnd);
         let mut msg = MSG::default();
@@ -150,6 +164,94 @@ unsafe extern "system" fn window_proc(
         // SAFETY: default handling for everything else.
         _ => unsafe { DefWindowProcW(hwnd, msg, wparam, lparam) },
     }
+}
+
+/// Creates the tooltip that names the device under the pointer.
+fn create_tooltip(owner: HWND, module: windows::Win32::Foundation::HINSTANCE) {
+    // SAFETY: standard common-controls tooltip creation on the window thread.
+    unsafe {
+        let _ = InitCommonControlsEx(&INITCOMMONCONTROLSEX {
+            dwSize: std::mem::size_of::<INITCOMMONCONTROLSEX>() as u32,
+            dwICC: ICC_WIN95_CLASSES,
+        });
+        let Ok(tip) = CreateWindowExW(
+            WS_EX_TOPMOST,
+            TOOLTIPS_CLASSW,
+            PCWSTR::null(),
+            WS_POPUP | WINDOW_STYLE(TTS_ALWAYSTIP | TTS_NOPREFIX),
+            0,
+            0,
+            0,
+            0,
+            Some(owner),
+            None,
+            Some(module),
+            None,
+        ) else {
+            return;
+        };
+        SendMessageW(tip, TTM_SETMAXTIPWIDTH, None, Some(LPARAM(400)));
+        TOOLTIP.with(|t| *t.borrow_mut() = Some(tip));
+    }
+}
+
+/// `TTTOOLINFOW` without its last field, a size every comctl32 version accepts.
+const TOOL_INFO_SIZE: u32 =
+    (std::mem::size_of::<TTTOOLINFOW>() - std::mem::size_of::<*mut core::ffi::c_void>()) as u32;
+
+/// Registers one tooltip area per item (client coordinates of `owner`).
+fn set_tools(owner: HWND, tools: Vec<(RECT, String)>) {
+    let Some(tip) = TOOLTIP.with(|t| *t.borrow()) else {
+        return;
+    };
+    let unchanged = TOOLS.with(|current| {
+        let current = current.borrow();
+        current.len() == tools.len()
+            && current.iter().zip(&tools).all(|((a, s), (b, t))| {
+                s == t && (a.left, a.top, a.right, a.bottom) == (b.left, b.top, b.right, b.bottom)
+            })
+    });
+    if unchanged {
+        return;
+    }
+    let previous = TOOLS.with(|t| t.borrow().len());
+    // SAFETY: messages to our own tooltip; the text buffers outlive each call
+    // (the control copies them).
+    unsafe {
+        for id in 0..previous {
+            let info = TTTOOLINFOW {
+                cbSize: TOOL_INFO_SIZE,
+                hwnd: owner,
+                uId: id,
+                ..Default::default()
+            };
+            SendMessageW(
+                tip,
+                TTM_DELTOOLW,
+                None,
+                Some(LPARAM(&info as *const _ as isize)),
+            );
+        }
+        for (id, (rect, text)) in tools.iter().enumerate() {
+            let mut text: Vec<u16> = text.encode_utf16().chain([0]).collect();
+            let info = TTTOOLINFOW {
+                cbSize: TOOL_INFO_SIZE,
+                uFlags: TTF_SUBCLASS,
+                hwnd: owner,
+                uId: id,
+                rect: *rect,
+                lpszText: windows::core::PWSTR(text.as_mut_ptr()),
+                ..Default::default()
+            };
+            SendMessageW(
+                tip,
+                TTM_ADDTOOLW,
+                None,
+                Some(LPARAM(&info as *const _ as isize)),
+            );
+        }
+    }
+    TOOLS.with(|t| *t.borrow_mut() = tools);
 }
 
 fn hide(hwnd: HWND) {
@@ -365,7 +467,7 @@ fn redraw(hwnd: HWND) {
         dc,
         fonts: Vec::new(),
     };
-    let text_font = canvas.font(w!("Segoe UI"), px(13), true);
+    let text_font = canvas.font(w!("Segoe UI"), px(12), false);
     let icon_font = canvas.icon_font(px(15));
 
     let (pad, gap, spacing) = (px(6), px(5), px(14));
@@ -409,6 +511,7 @@ fn redraw(hwnd: HWND) {
     };
     let light = light_taskbar();
     let mut ranges = Vec::new();
+    let mut tools = Vec::new();
     // SAFETY: drawing into our DIB through our DC; all objects are ours.
     unsafe {
         let previous = SelectObject(dc, HGDIOBJ(dib.0));
@@ -437,6 +540,15 @@ fn redraw(hwnd: HWND) {
             DrawTextW(dc, &mut text, &mut rect, format);
             cursor += tw;
             ranges.push((start as usize, cursor as usize, item.tone.rgb(light)));
+            tools.push((
+                RECT {
+                    left: start - spacing / 2,
+                    top: 0,
+                    right: cursor + spacing / 2,
+                    bottom: height,
+                },
+                item.tooltip.clone(),
+            ));
             cursor += spacing;
         }
         let _ = GdiFlush();
@@ -477,4 +589,5 @@ fn redraw(hwnd: HWND) {
         );
         let _ = ShowWindow(hwnd, SW_SHOWNOACTIVATE);
     }
+    set_tools(hwnd, tools);
 }
