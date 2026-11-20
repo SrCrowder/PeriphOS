@@ -95,8 +95,9 @@ what exists today. Legend: ✅ implemented, 🟡 partially implemented, ⏳ plan
 - ⏳ RGB Studio and lighting adapters
 - ⏳ First manufacturer-specific drivers (onboard DPI, polling rate, onboard profiles):
   Logitech HID++ (documented by the Solaar and libratbag projects) and Wooting (open SDKs)
-- 🟡 **Wireless battery monitor**: battery level is shown for Logitech wireless devices;
-  low-battery notifications, a tray indicator and other manufacturers are planned
+- 🟡 **Wireless battery monitor**: battery level for Logitech wireless devices, low-battery
+  notifications with two configurable levels (sent once per discharge); a tray indicator and
+  other manufacturers are planned
 - ⏳ **Taskbar readout**: a compact, always-visible text next to the tray (for example battery
   levels and the active profile), in the spirit of TraySense
 - ⏳ Profile import/export and full backup/restore
