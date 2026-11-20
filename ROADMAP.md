@@ -79,7 +79,8 @@ what exists today. Legend: ✅ implemented, 🟡 partially implemented, ⏳ plan
 - ⏳ Profiles shared by several devices
 - ✅ Keep running in the system tray when the window is closed (single instance)
 - ✅ Start when the user signs in, straight into the tray
-- ⏳ Show the active profile in the tray (optional)
+- ✅ Tray tooltip and menu show the active profile and battery levels; switch profiles or
+  return to automatic switching from the tray menu
 
 ## Phase 4: Input remapping and macros ⏳
 
@@ -96,8 +97,8 @@ what exists today. Legend: ✅ implemented, 🟡 partially implemented, ⏳ plan
 - ⏳ First manufacturer-specific drivers (onboard DPI, polling rate, onboard profiles):
   Logitech HID++ (documented by the Solaar and libratbag projects) and Wooting (open SDKs)
 - 🟡 **Wireless battery monitor**: battery level for Logitech wireless devices, low-battery
-  notifications with two configurable levels (sent once per discharge); a tray indicator and
-  other manufacturers are planned
+  notifications with two configurable levels (sent once per discharge), levels in the tray
+  tooltip and menu; other manufacturers are planned
 - ⏳ **Taskbar readout**: a compact, always-visible text next to the tray (for example battery
   levels and the active profile), in the spirit of TraySense
 - ⏳ Profile import/export and full backup/restore
