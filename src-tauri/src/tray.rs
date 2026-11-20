@@ -288,7 +288,11 @@ fn sync_battery_indicator(app: &AppHandle) {
     let devices: Vec<DeviceInfo> = state
         .last_devices()
         .into_iter()
-        .filter(|d| d.connection != ConnectionType::Virtual && d.battery.is_some())
+        .filter(|d| {
+            d.connection != ConnectionType::Virtual
+                && d.battery.is_some()
+                && settings.shows_battery_of(&d.id)
+        })
         .collect();
     let mode = match settings.battery_indicator {
         BatteryIndicator::Taskbar if !periphos_taskbar::SUPPORTED => BatteryIndicator::TrayIcons,
@@ -341,6 +345,7 @@ fn taskbar_items(devices: &[DeviceInfo], settings: &AppSettings) -> Vec<periphos
                     battery_icon::Tone::Critical => periphos_taskbar::Tone::Critical,
                     battery_icon::Tone::Charging => periphos_taskbar::Tone::Charging,
                 },
+                tooltip: format!("{}: {}", device.name, battery_label(&battery)),
             })
         })
         .collect()

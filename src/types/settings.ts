@@ -23,6 +23,8 @@ export interface AppSettings {
   batteryCriticalPercent: number;
   /** How battery levels are shown outside the window. */
   batteryIndicator: BatteryIndicator;
+  /** IDs of devices left out of the battery indicator. */
+  batteryHiddenDevices: string[];
 }
 
 /** `taskbar`: text next to the tray (Windows). `trayIcons`: one tray icon per device. */
@@ -39,4 +41,5 @@ export const DEFAULT_SETTINGS: AppSettings = {
   batteryWarningPercent: 20,
   batteryCriticalPercent: 10,
   batteryIndicator: "taskbar",
+  batteryHiddenDevices: [],
 };

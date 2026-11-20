@@ -68,15 +68,24 @@ pub struct AppSettings {
     pub battery_critical_percent: u8,
     /// How battery levels are shown outside the window.
     pub battery_indicator: BatteryIndicator,
+    /// Devices whose battery level is left out of the indicator.
+    pub battery_hidden_devices: Vec<String>,
 }
 
 impl AppSettings {
+    /// Whether the battery indicator includes this device.
+    pub fn shows_battery_of(&self, device_id: &str) -> bool {
+        !self.battery_hidden_devices.iter().any(|id| id == device_id)
+    }
+
     /// Clamps values that came from older versions or the UI into a valid range.
     pub fn normalized(mut self) -> Self {
         self.battery_warning_percent = self.battery_warning_percent.clamp(5, 50);
         self.battery_critical_percent = self
             .battery_critical_percent
             .clamp(1, self.battery_warning_percent.saturating_sub(1).max(1));
+        self.battery_hidden_devices.sort();
+        self.battery_hidden_devices.dedup();
         self
     }
 }
@@ -94,6 +103,7 @@ impl Default for AppSettings {
             battery_warning_percent: 20,
             battery_critical_percent: 10,
             battery_indicator: BatteryIndicator::default(),
+            battery_hidden_devices: Vec::new(),
         }
     }
 }
@@ -116,6 +126,18 @@ mod tests {
             (s.battery_warning_percent, s.battery_critical_percent),
             (20, 10)
         );
+    }
+
+    #[test]
+    fn hidden_devices_are_left_out() {
+        let s = AppSettings {
+            battery_hidden_devices: vec!["b".into(), "a".into(), "b".into()],
+            ..Default::default()
+        }
+        .normalized();
+        assert_eq!(s.battery_hidden_devices, vec!["a", "b"]);
+        assert!(!s.shows_battery_of("a"));
+        assert!(s.shows_battery_of("c"));
     }
 
     #[test]

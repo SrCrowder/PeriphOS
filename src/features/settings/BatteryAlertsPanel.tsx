@@ -1,10 +1,12 @@
 import { BellRing } from "lucide-react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 
 import { Button, Panel, SegmentedControl, SettingRow, Switch } from "@/components/ui";
 import { api } from "@/lib/ipc";
 import { errorMessage } from "@/lib/errors";
+import { batteryText } from "@/features/devices/BatteryIndicator";
 import { useAppInfo } from "@/stores/appInfo";
+import { useDevices } from "@/stores/devices";
 import { useSettings } from "@/stores/settings";
 import { toast } from "@/stores/toasts";
 import type { BatteryIndicator } from "@/types/settings";
@@ -61,6 +63,17 @@ export function BatteryAlertsPanel() {
   const windows = useAppInfo((s) => s.info?.platform === "windows");
   const [testing, setTesting] = useState(false);
   const off = !settings.batteryAlerts;
+  const allDevices = useDevices((s) => s.overview?.devices);
+  const batteryDevices = useMemo(
+    () => (allDevices ?? []).filter((d) => d.connection !== "virtual" && d.battery !== null),
+    [allDevices],
+  );
+  const indicatorOff = settings.batteryIndicator === "off";
+
+  const setShown = (deviceId: string, shown: boolean) => {
+    const others = settings.batteryHiddenDevices.filter((id) => id !== deviceId);
+    void update({ batteryHiddenDevices: shown ? others : [...others, deviceId] });
+  };
 
   const test = async () => {
     setTesting(true);
@@ -103,6 +116,22 @@ export function BatteryAlertsPanel() {
           />
         }
       />
+      {batteryDevices.map((device) => (
+        <SettingRow
+          key={device.id}
+          disabled={indicatorOff}
+          title={<span className="pl-4">{device.name}</span>}
+          description={<span className="block pl-4">{device.battery ? batteryText(device.battery) : null}</span>}
+          control={
+            <Switch
+              label={`Show the battery of ${device.name}`}
+              checked={!settings.batteryHiddenDevices.includes(device.id)}
+              disabled={indicatorOff}
+              onChange={(shown) => setShown(device.id, shown)}
+            />
+          }
+        />
+      ))}
       <SettingRow
         title="Notify when a battery runs low"
         description="Wireless devices whose battery PeriphOS can read. Each alert is sent once until the device charges."
