@@ -20,11 +20,13 @@ impl Storage {
             .optional()
             .map_err(to_core)?;
         Ok(raw
-            .and_then(|json| serde_json::from_str(&json).ok())
-            .unwrap_or_default())
+            .and_then(|json| serde_json::from_str::<AppSettings>(&json).ok())
+            .unwrap_or_default()
+            .normalized())
     }
 
     pub fn save_settings(&self, settings: &AppSettings) -> CoreResult<()> {
+        let settings = &settings.clone().normalized();
         let json =
             serde_json::to_string(settings).map_err(|e| CoreError::Storage(e.to_string()))?;
         self.conn
@@ -55,6 +57,9 @@ mod tests {
             update_channel: Some(UpdateChannel::Development),
             auto_check_updates: false,
             minimize_to_tray: false,
+            battery_alerts: false,
+            battery_warning_percent: 25,
+            battery_critical_percent: 5,
         };
         s.save_settings(&custom).unwrap();
         assert_eq!(s.load_settings().unwrap(), custom);
