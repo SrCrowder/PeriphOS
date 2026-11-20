@@ -94,8 +94,13 @@ what exists today. Legend: ✅ implemented, 🟡 partially implemented, ⏳ plan
 - ✅ Button diagram for the G502 X family (original drawing, a label per button), list view
   for other mice; restore factory assignments (read from the mouse's built-in profile) or
   the user's own saved defaults per device; restore a single button from the dialog
+- ✅ Buttons per PeriphOS profile: each profile can have its own assignments; profiles
+  without them (new ones included) use the device's saved defaults. Applied on profile
+  switch and on connect, written only when the mouse holds something different
+- ✅ Key names follow the user's keyboard layout (Keyboard Map API in WebView2)
 - ⏳ Logitech onboard profile slots per PeriphOS profile (switch slots instead of rewriting
-  memory, which wears flash), G-shift layer, macros stored on the mouse
+  memory, to reduce flash writes), G-shift layer, macros stored on the mouse
+- ⏳ Wheel scroll remapping (not stored on the mouse: needs software remapping)
 - ⏳ Macros through PeriphOS for devices without onboard macros. The G502 X family has no
   control diversion (HID++ 0x1B04), so its software macros need the mouse button spy
   (0x8110) or a low-level hook
