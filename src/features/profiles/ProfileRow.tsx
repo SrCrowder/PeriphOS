@@ -7,6 +7,7 @@ import { cn } from "@/lib/cn";
 import { formatDateTime, formatRelative } from "@/lib/format";
 import type { Profile } from "@/types/profile";
 
+import { LinkedGames } from "./LinkedGames";
 import { ProfileApps } from "./ProfileApps";
 import { ProfileDeviceSettings } from "./ProfileDeviceSettings";
 
@@ -32,7 +33,7 @@ export function ProfileRow({
   const [open, setOpen] = useState(false);
   return (
     <li className="group">
-      <div className="flex items-center gap-4 px-6 py-4 transition-colors hover:bg-raised/60">
+      <div className="flex items-start gap-4 px-6 py-4 transition-colors hover:bg-raised/60">
         <button
           type="button"
           onClick={() => setOpen((o) => !o)}
@@ -52,9 +53,12 @@ export function ProfileRow({
             )}
             {profile.isDefault && <Badge tone="accent">Default</Badge>}
           </div>
-          <p className="truncate text-[13px] text-muted">
-            {profile.description ?? <span className="text-subtle">No description</span>}
-          </p>
+          {profile.description && <p className="truncate text-[13px] text-muted">{profile.description}</p>}
+          {!(profile.isDefault && profile.description) && (
+            <div className="mt-2">
+              <LinkedGames profile={profile} />
+            </div>
+          )}
         </div>
         <time
           dateTime={new Date(profile.updatedAt).toISOString()}
@@ -97,7 +101,7 @@ export function ProfileRow({
           <Button
             size="sm"
             variant="ghost"
-            aria-label="Games, apps and device settings"
+            aria-label="Linked games and device settings"
             aria-expanded={open}
             onClick={() => setOpen((o) => !o)}
           >
@@ -108,7 +112,7 @@ export function ProfileRow({
       {open && (
         <div className="grid gap-5 px-6 pb-5 pl-20 xl:grid-cols-2">
           <section>
-            <p className="mb-2 text-xs font-semibold text-muted">Games and apps</p>
+            <p className="mb-2 text-xs font-semibold text-muted">Linked games and apps</p>
             <ProfileApps profile={profile} />
           </section>
           <section>
