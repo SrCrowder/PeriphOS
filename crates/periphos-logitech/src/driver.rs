@@ -171,6 +171,10 @@ impl DeviceDriver for LogitechDriver {
         self.with_device(device_id, settings::read_all)
     }
 
+    fn diagnostics(&self, device_id: &str) -> CoreResult<String> {
+        self.with_device(device_id, crate::diagnostics::report)
+    }
+
     fn apply_setting(&self, device_id: &str, change: SettingChange) -> CoreResult<DeviceSettings> {
         self.with_device(device_id, |s, slot| {
             // Validate against what the device itself reports before writing anything.

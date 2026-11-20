@@ -68,4 +68,12 @@ pub trait DeviceDriver: Send + Sync {
             "this device's settings cannot be changed yet".into(),
         ))
     }
+
+    /// A read-only technical report of the device (protocol features,
+    /// programmable controls, memory layout), for adding support for it.
+    fn diagnostics(&self, _device_id: &str) -> CoreResult<String> {
+        Err(CoreError::Unsupported(
+            "no technical report is available for this device".into(),
+        ))
+    }
 }
