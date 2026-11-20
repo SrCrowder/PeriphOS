@@ -21,9 +21,12 @@ export interface AppSettings {
   batteryWarningPercent: number;
   /** Always below the warning level. */
   batteryCriticalPercent: number;
-  /** One tray icon per wireless device showing its battery level. */
-  batteryInTray: boolean;
+  /** How battery levels are shown outside the window. */
+  batteryIndicator: BatteryIndicator;
 }
+
+/** `taskbar`: text next to the tray (Windows). `trayIcons`: one tray icon per device. */
+export type BatteryIndicator = "taskbar" | "trayIcons" | "off";
 
 export const DEFAULT_SETTINGS: AppSettings = {
   theme: "dark",
@@ -35,5 +38,5 @@ export const DEFAULT_SETTINGS: AppSettings = {
   batteryAlerts: true,
   batteryWarningPercent: 20,
   batteryCriticalPercent: 10,
-  batteryInTray: true,
+  batteryIndicator: "taskbar",
 };

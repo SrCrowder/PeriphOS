@@ -7,7 +7,10 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Mutex;
 use std::thread;
 
-use periphos_core::device::{BatteryLevel, BatteryState, ChargingState, ConnectionType};
+use periphos_core::device::{
+    BatteryLevel, BatteryState, ChargingState, ConnectionType, DeviceInfo, DeviceKind,
+};
+use periphos_core::settings::{AppSettings, BatteryIndicator};
 use tauri::image::Image;
 use tauri::menu::{CheckMenuItem, Menu, MenuItem, PredefinedMenuItem, Submenu};
 use tauri::tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent};
@@ -56,6 +59,8 @@ pub fn show_on_launch<R: Runtime>(app: &AppHandle<R>) {
 
 /// Creates the tray icon. Failure is not fatal: some desktops have no tray.
 pub fn create(app: &AppHandle) {
+    let handle = app.clone();
+    periphos_taskbar::set_on_click(move || show_main_window(&handle));
     match build(app) {
         Ok(()) => {
             TRAY_AVAILABLE.store(true, Ordering::SeqCst);
@@ -167,7 +172,7 @@ pub fn refresh(app: &AppHandle) {
     let handle = app.clone();
     let _ = app.run_on_main_thread(move || {
         refresh_now(&handle);
-        sync_battery_icons(&handle);
+        sync_battery_indicator(&handle);
     });
 }
 
@@ -272,19 +277,78 @@ fn refresh_now(app: &AppHandle) {
     }
 }
 
-/// One tray icon per wireless device with a readable battery, drawn with its
-/// level; icons of devices that are gone are removed.
-fn sync_battery_icons(app: &AppHandle) {
+/// Shows battery levels as the user chose: text on the taskbar, tray icons,
+/// or nothing. Without taskbar support, tray icons are used instead.
+fn sync_battery_indicator(app: &AppHandle) {
     let state = app.state::<AppState>();
     let settings = state
         .storage()
         .and_then(|s| s.load_settings())
         .unwrap_or_default();
-    let devices = if settings.battery_in_tray {
-        state.last_devices()
+    let devices: Vec<DeviceInfo> = state
+        .last_devices()
+        .into_iter()
+        .filter(|d| d.connection != ConnectionType::Virtual && d.battery.is_some())
+        .collect();
+    let mode = match settings.battery_indicator {
+        BatteryIndicator::Taskbar if !periphos_taskbar::SUPPORTED => BatteryIndicator::TrayIcons,
+        mode => mode,
+    };
+    let taskbar_items = if mode == BatteryIndicator::Taskbar {
+        taskbar_items(&devices, &settings)
     } else {
         Vec::new()
     };
+    periphos_taskbar::set_items(taskbar_items);
+    let icon_devices = if mode == BatteryIndicator::TrayIcons {
+        devices
+    } else {
+        Vec::new()
+    };
+    sync_battery_icons(app, &icon_devices, &settings);
+}
+
+fn taskbar_items(devices: &[DeviceInfo], settings: &AppSettings) -> Vec<periphos_taskbar::Item> {
+    devices
+        .iter()
+        .filter_map(|device| {
+            let battery = device.battery?;
+            let (_, tone) = battery_icon::appearance(
+                &battery,
+                settings.battery_warning_percent,
+                settings.battery_critical_percent,
+            );
+            let text = match (battery.percent, battery.level) {
+                (Some(p), _) => format!("{p}%"),
+                (None, Some(BatteryLevel::Full)) => "Full".into(),
+                (None, Some(BatteryLevel::Good)) => "Good".into(),
+                (None, Some(BatteryLevel::Low)) => "Low".into(),
+                (None, Some(BatteryLevel::Critical | BatteryLevel::Empty)) => "Empty".into(),
+                (None, None) => return None,
+            };
+            Some(periphos_taskbar::Item {
+                glyph: match device.kind {
+                    DeviceKind::Mouse => periphos_taskbar::Glyph::Mouse,
+                    DeviceKind::Keyboard => periphos_taskbar::Glyph::Keyboard,
+                    DeviceKind::Headset => periphos_taskbar::Glyph::Headset,
+                    DeviceKind::Controller => periphos_taskbar::Glyph::Controller,
+                    _ => periphos_taskbar::Glyph::Other,
+                },
+                text,
+                tone: match tone {
+                    battery_icon::Tone::Normal => periphos_taskbar::Tone::Normal,
+                    battery_icon::Tone::Low => periphos_taskbar::Tone::Low,
+                    battery_icon::Tone::Critical => periphos_taskbar::Tone::Critical,
+                    battery_icon::Tone::Charging => periphos_taskbar::Tone::Charging,
+                },
+            })
+        })
+        .collect()
+}
+
+/// One tray icon per device in `devices`, drawn with its level; icons of
+/// devices not in the list are removed.
+fn sync_battery_icons(app: &AppHandle, devices: &[DeviceInfo], settings: &AppSettings) {
     let Ok(mut shown) = BATTERY_ICONS.lock() else {
         return;
     };

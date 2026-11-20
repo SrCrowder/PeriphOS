@@ -1,11 +1,19 @@
 import { BellRing } from "lucide-react";
 import { useState } from "react";
 
-import { Button, Panel, SettingRow, Switch } from "@/components/ui";
+import { Button, Panel, SegmentedControl, SettingRow, Switch } from "@/components/ui";
 import { api } from "@/lib/ipc";
 import { errorMessage } from "@/lib/errors";
+import { useAppInfo } from "@/stores/appInfo";
 import { useSettings } from "@/stores/settings";
 import { toast } from "@/stores/toasts";
+import type { BatteryIndicator } from "@/types/settings";
+
+const INDICATOR_OPTIONS = [
+  { value: "taskbar", label: "Taskbar" },
+  { value: "trayIcons", label: "Tray icons" },
+  { value: "off", label: "Off" },
+] as const satisfies readonly { value: BatteryIndicator; label: string }[];
 
 const WARNING_OPTIONS = [10, 15, 20, 25, 30, 40];
 const CRITICAL_OPTIONS = [5, 10, 15, 20];
@@ -50,6 +58,7 @@ function PercentSelect({
 /** Low-battery notifications for wireless devices. */
 export function BatteryAlertsPanel() {
   const { settings, update } = useSettings();
+  const windows = useAppInfo((s) => s.info?.platform === "windows");
   const [testing, setTesting] = useState(false);
   const off = !settings.batteryAlerts;
 
@@ -68,19 +77,29 @@ export function BatteryAlertsPanel() {
   return (
     <Panel title="Battery">
       <SettingRow
-        title="Show battery levels in the system tray"
+        title="Show battery levels"
         description={
-          <>
-            One icon per wireless device with its charge. Windows may first place new icons in the
-            hidden-icons area (^): drag them onto the taskbar, or turn them on in Settings &gt;
-            Personalization &gt; Taskbar &gt; Other system tray icons.
-          </>
+          settings.batteryIndicator === "taskbar" ? (
+            windows ? (
+              <>Text on the taskbar, next to the system tray: an icon and the charge of each wireless device. Hidden while a game runs in full screen.</>
+            ) : (
+              <>The taskbar text is available on Windows; tray icons are used on this system.</>
+            )
+          ) : settings.batteryIndicator === "trayIcons" ? (
+            <>
+              One tray icon per device with its charge. Windows may first put new icons in the
+              hidden-icons area (^): drag them onto the taskbar.
+            </>
+          ) : (
+            <>Battery levels are only shown in PeriphOS.</>
+          )
         }
         control={
-          <Switch
-            label="Show battery levels in the system tray"
-            checked={settings.batteryInTray}
-            onChange={(batteryInTray) => void update({ batteryInTray })}
+          <SegmentedControl
+            label="Show battery levels"
+            value={settings.batteryIndicator}
+            options={INDICATOR_OPTIONS}
+            onChange={(batteryIndicator) => void update({ batteryIndicator })}
           />
         }
       />
