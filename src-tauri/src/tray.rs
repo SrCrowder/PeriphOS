@@ -24,6 +24,19 @@ pub fn show_main_window<R: Runtime>(app: &AppHandle<R>) {
     }
 }
 
+/// Argument passed when PeriphOS starts with the system: stay in the tray.
+pub const HIDDEN_ARG: &str = "--hidden";
+
+/// Shows the window unless PeriphOS started with the system and can wait in
+/// the tray. Without a tray the window is always shown, so the app is never
+/// left running with no way to reach it.
+pub fn show_on_launch<R: Runtime>(app: &AppHandle<R>) {
+    let started_hidden = std::env::args().any(|a| a == HIDDEN_ARG);
+    if !(started_hidden && TRAY_AVAILABLE.load(Ordering::SeqCst)) {
+        show_main_window(app);
+    }
+}
+
 /// Creates the tray icon. Failure is not fatal: some desktops have no tray.
 pub fn create<R: Runtime>(app: &AppHandle<R>) {
     match build(app) {

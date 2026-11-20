@@ -31,6 +31,11 @@ pub fn run() {
         }))
         .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_plugin_dialog::init())
+        .plugin(
+            tauri_plugin_autostart::Builder::new()
+                .args([tray::HIDDEN_ARG])
+                .build(),
+        )
         .manage(PendingUpdate::default())
         .setup(|app| {
             let data_dir = app.path().app_data_dir()?;
@@ -40,6 +45,7 @@ pub fn run() {
             device_watcher::spawn(app.handle().clone());
             app_watcher::spawn(app.handle().clone());
             tray::create(app.handle());
+            tray::show_on_launch(app.handle());
             Ok(())
         })
         .on_window_event(tray::on_window_event)
@@ -66,6 +72,8 @@ pub fn run() {
             commands::profiles::delete_profile_device_settings,
             commands::settings::get_settings,
             commands::settings::update_settings,
+            commands::settings::get_launch_at_startup,
+            commands::settings::set_launch_at_startup,
             commands::updates::get_update_status,
             commands::updates::check_for_update,
             commands::updates::install_update,
