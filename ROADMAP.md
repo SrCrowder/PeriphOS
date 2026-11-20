@@ -90,7 +90,10 @@ what exists today. Legend: ✅ implemented, 🟡 partially implemented, ⏳ plan
   used to add support for new devices from real data
 - ✅ Logitech G button remapping stored in the mouse's onboard profile (HID++ 0x8100): read,
   modify one assignment, CRC, write, read back, undo on mismatch; never removes the last
-  left click. Works without PeriphOS running. Not confirmed on real hardware yet
+  left click. Works without PeriphOS running. Confirmed on a G502 X PLUS
+- ✅ Button diagram for the G502 X family (original drawing, a label per button), list view
+  for other mice; restore factory assignments (read from the mouse's built-in profile) or
+  the user's own saved defaults per device; restore a single button from the dialog
 - ⏳ Logitech onboard profile slots per PeriphOS profile (switch slots instead of rewriting
   memory, which wears flash), G-shift layer, macros stored on the mouse
 - ⏳ Macros through PeriphOS for devices without onboard macros. The G502 X family has no

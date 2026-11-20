@@ -24,7 +24,7 @@ for untested devices are very welcome (see [Contributing](#contributing)).
 
 | Device | Connection | Battery | DPI | Report rate | Buttons | Onboard profiles | Status |
 | ------ | ---------- | :-----: | :-: | :---------: | :-----: | :--------------: | ------ |
-| Logitech G502 X PLUS | LIGHTSPEED receiver | ✅ | ✅ | ✅ | ✅ ² | Detected, not switched | Tested ³ |
+| Logitech G502 X PLUS | LIGHTSPEED receiver | ✅ | ✅ | ✅ | ✅ ² | Detected, not switched | Tested |
 | Logitech G502 X LIGHTSPEED | LIGHTSPEED receiver | ✅ | ✅ | ✅ | ✅ ² | Detected, not switched | Expected |
 | Other Logitech mice and keyboards (HID++ 2.0) | Unifying, LIGHTSPEED, Nano or Bolt receiver | ✅ | ✅ ¹ | ✅ ¹ | ✅ ² | Detected, not switched | Expected |
 | Logitech devices on a USB cable | USB | — | — | — | — | — | Detected only |
@@ -34,8 +34,8 @@ for untested devices are very welcome (see [Contributing](#contributing)).
 
 ¹ When the device reports the setting; PeriphOS only offers values the device accepts.<br/>
 ² Mice that keep their buttons in onboard profiles (Logitech G series): mouse buttons, keys and
-shortcuts, media keys and DPI functions, stored on the mouse. Macros are not supported yet.<br/>
-³ Button remapping is new and not yet confirmed on real hardware.
+shortcuts, media keys and DPI functions, stored on the mouse, with factory and personal
+defaults to go back to. Macros are not supported yet.
 
 Every device works with PeriphOS profiles, which switch automatically when a game or app
 comes to the front. On Logitech devices, close G HUB while using PeriphOS; on Wooting
