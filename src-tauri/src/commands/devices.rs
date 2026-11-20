@@ -1,4 +1,6 @@
-use periphos_core::device::{DeviceOverview, DeviceSettings, SettingChange};
+use periphos_core::device::{
+    ButtonAction, ButtonLayout, DeviceOverview, DeviceSettings, SettingChange,
+};
 use periphos_core::CoreError;
 use serde::Serialize;
 use tauri::{AppHandle, Manager, State};
@@ -35,6 +37,35 @@ pub async fn get_device_settings(app: AppHandle, device_id: String) -> IpcResult
         settings.conflicting_software =
             conflicts::running_for_driver(conflicts::driver_of(&device_id));
         Ok(settings)
+    })
+    .await
+}
+
+/// What each programmable button of the device does.
+#[tauri::command]
+pub async fn get_device_buttons(app: AppHandle, device_id: String) -> IpcResult<ButtonLayout> {
+    blocking(app, move |state| {
+        state
+            .devices
+            .driver_for(&device_id)?
+            .read_buttons(&device_id)
+    })
+    .await
+}
+
+/// Assigns an action to one button; returns the layout read back.
+#[tauri::command]
+pub async fn set_device_button(
+    app: AppHandle,
+    device_id: String,
+    index: u8,
+    action: ButtonAction,
+) -> IpcResult<ButtonLayout> {
+    blocking(app, move |state| {
+        state
+            .devices
+            .driver_for(&device_id)?
+            .set_button(&device_id, index, action)
     })
     .await
 }

@@ -9,6 +9,7 @@
  * the example devices from `previewFixtures.ts` (development server only).
  */
 import type { IpcError } from "@/types/app";
+import type { ButtonLayout } from "@/types/buttons";
 import type { DeviceInfo, DeviceSettings } from "@/types/device";
 import type { AppRule } from "@/types/apps";
 import type { DeviceProfileSettings, Profile, ProfileDraft, SwitchMode } from "@/types/profile";
@@ -41,10 +42,12 @@ function activeProfile(): Profile {
 
 let fixtureDevices: DeviceInfo[] = [];
 let fixtureSettings = new Map<string, DeviceSettings>();
+let fixtureButtons = new Map<string, ButtonLayout>();
 if (import.meta.env.DEV && new URLSearchParams(location.search).has("fixtures")) {
   const fixtures = await import("./previewFixtures");
   fixtureDevices = fixtures.PREVIEW_FIXTURE_DEVICES;
   fixtureSettings = fixtures.previewFixtureSettings();
+  fixtureButtons = fixtures.previewFixtureButtons();
 }
 
 function fail(code: IpcError["code"], message: string): never {
@@ -216,6 +219,21 @@ const handlers: { [C in CommandName]: (args: Commands[C]["args"]) => Commands[C]
   get_device_settings: ({ deviceId }) => {
     const settings = fixtureSettings.get(deviceId);
     return settings ? structuredClone(settings) : fail("unsupported", "this device's settings cannot be read yet");
+  },
+  get_device_buttons: ({ deviceId }) =>
+    fixtureButtons.has(deviceId)
+      ? structuredClone(fixtureButtons.get(deviceId)!)
+      : fail("unsupported", "this device's buttons cannot be read yet"),
+  set_device_button: ({ deviceId, index, action }) => {
+    const layout = fixtureButtons.get(deviceId) ?? fail("unsupported", "this device's buttons cannot be changed yet");
+    const button = layout.buttons[index] ?? fail("validation", "There is no such button on this device.");
+    const before = button.action;
+    button.action = action;
+    if (!layout.buttons.some((b) => b.action.type === "mouse" && b.action.button === "left")) {
+      button.action = before;
+      return fail("device", "At least one button must keep the left click, or the mouse could not click.");
+    }
+    return structuredClone(layout);
   },
   device_diagnostics: () =>
     "HID++ protocol 4.2\n\n## Features\n  1  0x0001 v2  Feature set\n(Browser preview: sample text, no device was read.)",

@@ -4,6 +4,7 @@
  * builds and never shown in the desktop app. Keep in sync with
  * crates/periphos-hid/devices.json when changing the device model.
  */
+import type { ButtonLayout } from "@/types/buttons";
 import type { DeviceInfo, DeviceSettings } from "@/types/device";
 
 export const PREVIEW_FIXTURE_DEVICES: DeviceInfo[] = [
@@ -135,6 +136,58 @@ export function previewFixtureSettings(): Map<string, DeviceSettings> {
         onboardProfileActive: null,
         onboardProfile: { current: 0, count: 4 },
         conflictingSoftware: [],
+      },
+    ],
+  ]);
+}
+
+/** Buttons of the G502 X fixture, as the real mouse reports them. */
+export function previewFixtureButtons(): Map<string, ButtonLayout> {
+  const names = [
+    "Left button",
+    "Right button",
+    "Wheel click",
+    "Back button",
+    "Sniper button",
+    "Forward button",
+    "Wheel tilt left",
+    "Wheel tilt right",
+    "Button behind the wheel",
+    "DPI up button",
+    "DPI down button",
+  ];
+  const actions: ButtonLayout["buttons"][number]["action"][] = [
+    { type: "mouse", button: "left" },
+    { type: "mouse", button: "right" },
+    { type: "mouse", button: "middle" },
+    { type: "mouse", button: "back" },
+    { type: "special", function: "dpiShift" },
+    { type: "mouse", button: "forward" },
+    { type: "special", function: "wheelLeft" },
+    { type: "special", function: "wheelRight" },
+    { type: "special", function: "profileCycle" },
+    { type: "special", function: "dpiUp" },
+    { type: "special", function: "dpiDown" },
+  ];
+  return new Map([
+    [
+      "logitech-hidpp:c547:0:1",
+      {
+        buttons: names.map((name, index) => ({ index, name, action: actions[index]! })),
+        onboardProfile: 1,
+        inEffect: true,
+        specialFunctions: [
+          "wheelLeft",
+          "wheelRight",
+          "dpiUp",
+          "dpiDown",
+          "dpiCycle",
+          "dpiDefault",
+          "dpiShift",
+          "profileNext",
+          "profilePrevious",
+          "profileCycle",
+        ],
       },
     ],
   ]);

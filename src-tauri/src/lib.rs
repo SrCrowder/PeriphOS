@@ -57,6 +57,8 @@ pub fn run() {
             commands::devices::get_device_overview,
             commands::devices::get_device_settings,
             commands::devices::device_diagnostics,
+            commands::devices::get_device_buttons,
+            commands::devices::set_device_button,
             commands::devices::apply_device_setting,
             commands::profiles::list_profiles,
             commands::profiles::create_profile,
