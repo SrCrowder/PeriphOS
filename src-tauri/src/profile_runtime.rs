@@ -1,7 +1,7 @@
 //! The active profile, automatic switching, and applying device settings.
 
 use periphos_core::apps::{find_rule, AppIdentity};
-use periphos_core::device::{ButtonAction, ButtonAssignment, DeviceInfo};
+use periphos_core::device::{ButtonAction, ButtonAssignment, DeviceInfo, SettingChange};
 use periphos_core::profile::Profile;
 use periphos_core::{CoreError, CoreResult};
 use serde::Serialize;
@@ -111,7 +111,9 @@ pub fn apply_to_devices(
         let outcome = state.devices.driver_for(&device.id).and_then(|driver| {
             let mut all_took_effect = true;
             for change in changes {
-                let after = driver.apply_setting(&device.id, change)?;
+                let after = driver
+                    .apply_setting(&device.id, change)
+                    .map_err(|e| with_context(e, setting_name(&change)))?;
                 all_took_effect &= change.took_effect(&after);
             }
             if let Some(buttons) = buttons {
@@ -136,7 +138,7 @@ pub fn apply_to_devices(
                     }
                     // A device without assignable buttons: nothing to do.
                     Err(CoreError::Unsupported(_)) => {}
-                    Err(err) => return Err(err),
+                    Err(err) => return Err(with_context(err, "buttons")),
                 }
             }
             Ok(all_took_effect)
@@ -157,6 +159,23 @@ pub fn apply_to_devices(
         });
     }
     Ok(results)
+}
+
+fn setting_name(change: &SettingChange) -> &'static str {
+    match change {
+        SettingChange::Dpi(_) => "sensitivity",
+        SettingChange::ReportRateHz(_) => "report rate",
+        SettingChange::OnboardProfile(_) => "onboard profile",
+    }
+}
+
+/// Names the setting that failed, so the user knows what was not applied.
+fn with_context(error: CoreError, what: &str) -> CoreError {
+    match error {
+        CoreError::Device(m) => CoreError::Device(format!("{what}: {m}")),
+        CoreError::Unsupported(m) => CoreError::Unsupported(format!("{what}: {m}")),
+        other => other,
+    }
 }
 
 /// Makes `profile` active, applies it to every connected device and tells the UI.

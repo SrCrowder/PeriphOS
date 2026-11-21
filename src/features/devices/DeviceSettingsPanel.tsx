@@ -168,13 +168,10 @@ export function DeviceSettingsPanel({ device }: { device: DeviceInfo }) {
             </p>
           ))}
           {state.settings.onboardProfileActive && (
-            <p className="flex gap-2.5 rounded-2xl bg-warning/10 px-4 py-3 text-[13px] text-warning">
-              <TriangleAlert className="mt-0.5 size-4 shrink-0" />
-              <span>
-                The device is running a profile stored in its own memory, so it may ignore these
-                changes or switch back to the profile&apos;s values. Turning off onboard memory mode
-                in the manufacturer&apos;s app gives PeriphOS control.
-              </span>
+            <p className="rounded-2xl bg-raised px-4 py-3 text-[13px] text-muted">
+              The device runs from a profile stored in its own memory. PeriphOS writes the
+              sensitivity and report rate into that profile, so they also keep working without
+              PeriphOS.
             </p>
           )}
 
