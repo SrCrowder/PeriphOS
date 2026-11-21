@@ -210,6 +210,12 @@ impl DeviceDriver for LogitechDriver {
         self.with_device(device_id, |s, slot| {
             // Validate against what the device itself reports before writing anything.
             let current = settings::read_all(s, slot)?;
+            if change.took_effect(&current) {
+                return Ok(current); // already set: nothing to write
+            }
+            // In onboard mode the values come from the profile in the mouse's
+            // memory: change them there (the mouse refuses or undoes direct changes).
+            let onboard = crate::onboard::onboard_mode(s, slot).unwrap_or(false);
             match change {
                 SettingChange::Dpi(dpi) => {
                     let allowed = current
@@ -221,7 +227,11 @@ impl DeviceDriver for LogitechDriver {
                             "{dpi} DPI is not a value this mouse accepts."
                         )));
                     }
-                    settings::set_dpi(s, slot, dpi)?;
+                    if onboard {
+                        crate::onboard::set_dpi(s, slot, dpi)?;
+                    } else {
+                        settings::set_dpi(s, slot, dpi)?;
+                    }
                 }
                 SettingChange::ReportRateHz(hz) => {
                     let allowed = current
@@ -233,7 +243,11 @@ impl DeviceDriver for LogitechDriver {
                             "{hz} Hz is not a rate this device accepts."
                         )));
                     }
-                    settings::set_report_rate(s, slot, hz)?;
+                    if onboard {
+                        crate::onboard::set_report_rate(s, slot, hz)?;
+                    } else {
+                        settings::set_report_rate(s, slot, hz)?;
+                    }
                 }
                 SettingChange::OnboardProfile(_) => {
                     return Err(session::Error::Io(

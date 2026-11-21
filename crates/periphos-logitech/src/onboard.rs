@@ -396,6 +396,91 @@ pub fn read_buttons<T: Transport>(
 /// onboard profile with a single write, and returns the layout read back.
 /// Assignments that cannot be stored (such as an unknown macro) are left as
 /// they are.
+/// Writes `updated` over the active profile when it differs, checks it by
+/// reading it back (restoring the previous contents on a mismatch) and makes
+/// the mouse reload it.
+fn store<T: Transport>(
+    s: &mut Session<T>,
+    dev: u8,
+    profile: &ActiveProfile,
+    updated: &[u8],
+) -> Result<(), Error> {
+    if updated == profile.bytes {
+        return Ok(());
+    }
+    write_sector(s, dev, profile.index, profile.sector, updated)?;
+    let check = read_sector(s, dev, profile.index, profile.sector, updated.len())?;
+    if check != updated {
+        // Put the previous contents back rather than leave a damaged profile.
+        let _ = write_sector(s, dev, profile.index, profile.sector, &profile.bytes);
+        return Err(unsupported(
+            "The mouse did not store the change correctly, so it was undone.",
+        ));
+    }
+    if profile.onboard_mode {
+        // Reload the profile so the change is used right away. It is already
+        // stored, so a failure here is not an error: the mouse picks it up the
+        // next time it loads the profile.
+        let _ = s.call_feature(
+            dev,
+            profile.index,
+            FN_SET_CURRENT_PROFILE,
+            &[0, profile.number],
+        );
+    }
+    Ok(())
+}
+
+/// Offsets in a profile sector (formats 4 and 5).
+const REPORT_RATE_OFFSET: usize = 0;
+const DEFAULT_DPI_INDEX_OFFSET: usize = 1;
+const DPI_SLOTS_OFFSET: usize = 3;
+const DPI_SLOTS: usize = 5;
+
+/// Whether the device runs from its onboard profiles now. In that mode the
+/// sensitivity and report rate come from the active profile, and the device
+/// refuses or undoes changes made outside it.
+pub fn onboard_mode<T: Transport>(s: &mut Session<T>, dev: u8) -> Result<bool, Error> {
+    let Some(index) = s.feature_index(dev, feature::ONBOARD_PROFILES)? else {
+        return Ok(false);
+    };
+    Ok(s.call_feature(dev, index, FN_GET_MODE, &[])?
+        .first()
+        .is_some_and(|&m| m == MODE_ONBOARD))
+}
+
+/// Sets the report rate stored in the active onboard profile.
+pub fn set_report_rate<T: Transport>(s: &mut Session<T>, dev: u8, hz: u32) -> Result<(), Error> {
+    let profile =
+        read_active(s, dev)?.ok_or_else(|| unsupported("This device has no onboard profiles."))?;
+    // Stored as the period in milliseconds.
+    let ms = (1..=8u32)
+        .find(|ms| 1000 / ms == hz && 1000 % ms == 0)
+        .ok_or_else(|| unsupported("This report rate cannot be stored in the mouse's profile."))?;
+    let mut updated = profile.bytes.clone();
+    updated[REPORT_RATE_OFFSET] = ms as u8;
+    seal(&mut updated);
+    store(s, dev, &profile, &updated)
+}
+
+/// Sets the sensitivity of the active onboard profile's default DPI slot.
+pub fn set_dpi<T: Transport>(s: &mut Session<T>, dev: u8, dpi: u32) -> Result<(), Error> {
+    let profile =
+        read_active(s, dev)?.ok_or_else(|| unsupported("This device has no onboard profiles."))?;
+    let value = u16::try_from(dpi).map_err(|_| unsupported("DPI out of range"))?;
+    let slot = profile.bytes[DEFAULT_DPI_INDEX_OFFSET] as usize;
+    if slot >= DPI_SLOTS {
+        return Err(unsupported(
+            "The mouse's profile has an unexpected DPI setup.",
+        ));
+    }
+    let at = DPI_SLOTS_OFFSET + slot * 2;
+    let mut updated = profile.bytes.clone();
+    updated[at..at + 2].copy_from_slice(&value.to_le_bytes());
+    seal(&mut updated);
+    store(s, dev, &profile, &updated)
+}
+
 pub fn set_buttons<T: Transport>(
     s: &mut Session<T>,
     dev: u8,
@@ -432,29 +517,7 @@ pub fn set_buttons<T: Transport>(
             "At least one button must keep the left click, or the mouse could not click.",
         ));
     }
-    if updated != profile.bytes {
-        let size = updated.len();
-        write_sector(s, dev, profile.index, profile.sector, &updated)?;
-        let check = read_sector(s, dev, profile.index, profile.sector, size)?;
-        if check != updated {
-            // Put the previous contents back rather than leave a damaged profile.
-            let _ = write_sector(s, dev, profile.index, profile.sector, &profile.bytes);
-            return Err(unsupported(
-                "The mouse did not store the change correctly, so it was undone.",
-            ));
-        }
-        if profile.onboard_mode {
-            // Reload the profile so the new assignments are used right away.
-            // They are already stored, so a failure here is not an error: the
-            // mouse picks them up the next time it loads the profile.
-            let _ = s.call_feature(
-                dev,
-                profile.index,
-                FN_SET_CURRENT_PROFILE,
-                &[0, profile.number],
-            );
-        }
-    }
+    store(s, dev, &profile, &updated)?;
     read_buttons(s, dev, model)?.ok_or_else(|| unsupported("This device has no onboard profiles."))
 }
 
@@ -633,6 +696,20 @@ mod tests {
                 .all(|&i| (0x30..0x34).contains(&i) || i >= 0xFD),
             "{changed:?}"
         );
+    }
+
+    #[test]
+    fn stores_dpi_and_report_rate_in_the_profile() {
+        let mem = memory();
+        let mut s = Session::new(mouse(mem.clone(), 1), Duration::from_millis(50));
+        set_dpi(&mut s, 1, 1600).unwrap();
+        set_report_rate(&mut s, 1, 500).unwrap();
+        let after = mem.borrow()[&1].clone();
+        assert!(crc_ok(&after));
+        // Default slot 2 (bytes 7-8), little-endian; period 2 ms.
+        assert_eq!(&after[7..9], &[0x40, 0x06]);
+        assert_eq!(after[0], 2);
+        assert!(set_report_rate(&mut s, 1, 300).is_err());
     }
 
     #[test]
