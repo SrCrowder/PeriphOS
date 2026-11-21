@@ -273,24 +273,15 @@ fn onboard<T: Transport>(
         return Ok(());
     }
 
-    // Profile directory (sector 0), then each listed profile sector.
-    let directory = read_sector(s, dev, index, 0x0000, sector_size)?;
-    let _ = writeln!(out, "\nsector 0x0000 (directory):");
-    dump(out, &directory);
-    let mut sectors = Vec::new();
-    for entry in directory.chunks(4).take(16) {
-        let sector = u16::from_be_bytes([entry[0], entry[1]]);
-        if sector == 0xFFFF || sector == 0 {
-            break;
-        }
-        sectors.push(sector);
-    }
-    if sectors.is_empty() {
-        // Nothing saved in writable memory: the built-in (ROM) profile is used.
-        sectors.push(0x0101);
-    }
+    // Every writable sector (profile directory, profiles, macros), then the
+    // built-in read-only profiles. Empty (erased) sectors are only listed.
+    let sector_count = u16::from(d[6]);
+    let rom_count = u16::from(d[4]);
+    let sectors = (0..sector_count).chain((1..=rom_count).map(|i| 0x0100 + i));
+    let mut empty = Vec::new();
     for sector in sectors {
         match read_sector(s, dev, index, sector, sector_size) {
+            Ok(bytes) if bytes.iter().all(|&b| b == 0xFF) => empty.push(format!("0x{sector:04X}")),
             Ok(bytes) => {
                 let _ = writeln!(out, "\nsector 0x{sector:04X}:");
                 dump(out, &bytes);
@@ -299,6 +290,9 @@ fn onboard<T: Transport>(
                 let _ = writeln!(out, "\nsector 0x{sector:04X}: (could not read: {e:?})");
             }
         }
+    }
+    if !empty.is_empty() {
+        let _ = writeln!(out, "\nempty sectors: {}", empty.join(" "));
     }
     Ok(())
 }
@@ -327,9 +321,22 @@ fn read_sector<T: Transport>(
     Ok(bytes)
 }
 
+/// Hex rows of 16 bytes; runs of rows that are all 0xFF are folded into one line.
 fn dump(out: &mut String, bytes: &[u8]) {
+    let mut folded = 0;
     for (row, chunk) in bytes.chunks(16).enumerate() {
+        if chunk.len() == 16 && chunk.iter().all(|&b| b == 0xFF) {
+            folded += 1;
+            continue;
+        }
+        if folded > 0 {
+            let _ = writeln!(out, "      ({folded} rows of FF)");
+            folded = 0;
+        }
         let _ = writeln!(out, "{:04X}  {}", row * 16, hex(chunk));
+    }
+    if folded > 0 {
+        let _ = writeln!(out, "      ({folded} rows of FF)");
     }
 }
 
