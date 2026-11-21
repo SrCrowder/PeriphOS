@@ -1,4 +1,4 @@
-import { Bookmark, Factory, Keyboard, RefreshCw, RotateCcw, TriangleAlert } from "lucide-react";
+import { Bookmark, Factory, Hand, Keyboard, RefreshCw, RotateCcw, TriangleAlert } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { Button, ConfirmDialog, Dialog, Panel, Spinner } from "@/components/ui";
@@ -33,6 +33,7 @@ export function ButtonsPanel({ device }: { device: DeviceInfo }) {
   const [editing, setEditing] = useState<ButtonBinding | null>(null);
   const [restoring, setRestoring] = useState<Restore | null>(null);
   const [saving, setSaving] = useState(false);
+  const [releasing, setReleasing] = useState(false);
   const activeProfile = useProfiles(selectActiveProfile);
   /** Whether the active profile has its own assignments for this device. */
   const [ownButtons, setOwnButtons] = useState(false);
@@ -150,6 +151,14 @@ export function ButtonsPanel({ device }: { device: DeviceInfo }) {
     }
   };
 
+  /** Forgets the defaults and the active profile's buttons, so PeriphOS leaves them alone. */
+  const release = async () => {
+    await api.deleteButtonDefaults(device.id);
+    setDefaults(null);
+    await saveToProfile(null);
+    toast.success(`PeriphOS no longer changes the buttons of ${device.name} in this profile.`);
+  };
+
   if (state.status === "unsupported") return null;
 
   return (
@@ -259,6 +268,11 @@ export function ButtonsPanel({ device }: { device: DeviceInfo }) {
             <Button size="sm" variant="ghost" icon={<Bookmark className="size-3.5" />} disabled={saving} onClick={() => void saveAsDefaults()}>
               Save current as my defaults
             </Button>
+            {(defaults || ownButtons) && (
+              <Button size="sm" variant="ghost" icon={<Hand className="size-3.5" />} disabled={saving} onClick={() => setReleasing(true)}>
+                Stop managing buttons
+              </Button>
+            )}
             <p className="basis-full text-[12px] text-subtle">
               {defaults
                 ? `Your defaults were saved on ${new Date(defaults.updatedAt).toLocaleDateString()}. New profiles, and profiles without their own buttons, use them.`
@@ -277,6 +291,14 @@ export function ButtonsPanel({ device }: { device: DeviceInfo }) {
           onAssign={(action) => void assign(editing, action)}
         />
       )}
+      <ConfirmDialog
+        open={releasing}
+        onClose={() => setReleasing(false)}
+        title="Stop managing buttons?"
+        description={`PeriphOS forgets your default buttons for ${device.name} and stops setting them in "${activeProfile?.name ?? "this profile"}". The mouse keeps what it has now, also changes made with other software. Profiles that have their own buttons still set them.`}
+        confirmLabel="Stop managing"
+        onConfirm={release}
+      />
       <ConfirmDialog
         open={restoring !== null}
         onClose={() => setRestoring(null)}
